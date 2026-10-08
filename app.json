@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Seven",
+    "slug": "seven",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "seven",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "backgroundColor": "#0C0B0A",
+    "splash": {
+      "backgroundColor": "#0C0B0A",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ricky.seven",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
+    },
+    "android": {
+      "package": "com.ricky.seven",
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#0C0B0A"
+      }
+    },
+    "plugins": ["expo-font", "expo-notifications"]
+  }
+}

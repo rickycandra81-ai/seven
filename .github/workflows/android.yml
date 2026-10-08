@@ -1,0 +1,70 @@
+name: Android APK
+
+# Runs on every push to main, and whenever you press "Run workflow" in the
+# Actions tab. Nothing here talks to Expo's servers: the APK is built on the
+# runner with Gradle, so it costs Actions minutes only.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # React Native 0.81 builds on JDK 17
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # the runner already ships an Android SDK; this accepts the licences and
+      # makes sure the command-line tools are on PATH so Gradle can fetch any
+      # platform it still needs (Expo SDK 54 compiles against android-36)
+      - uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      # a type error is cheaper to find here than after a 15-minute native build
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      # generates the android/ project from app.json — it is not in git
+      - name: Prebuild android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      # name the file so successive builds are tellable apart
+      - name: Name the APK
+        id: apk
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          SRC=$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)
+          OUT="seven-${VERSION}-build${GITHUB_RUN_NUMBER}.apk"
+          cp "$SRC" "$OUT"
+          echo "name=${OUT}" >> "$GITHUB_OUTPUT"
+          ls -lh "$OUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.name }}
+          path: ${{ steps.apk.outputs.name }}
+          retention-days: 30
+          if-no-files-found: error
