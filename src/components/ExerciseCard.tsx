@@ -387,7 +387,7 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
                     </Text>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[styles.altName, { color: sel ? COLORS.ink : COLORS.paper }]}>
-                        {r.base ? `${r.n}  (planned)` : r.n}
+                        {r.n}
                       </Text>
                       <View style={styles.altTrack}>
                         <View

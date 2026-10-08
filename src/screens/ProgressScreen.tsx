@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 import { BodyLegend, BodyMap } from '../components/BodyMap';
+import { UpdateCard } from '../components/UpdateCard';
 import { DAYS } from '../data';
 import {
   CHART_H,
@@ -237,6 +238,8 @@ export function ProgressScreen() {
           )}
         </View>
       </Card>
+
+      <UpdateCard />
 
       <View style={styles.card}>
         <Text style={styles.privacyText}>

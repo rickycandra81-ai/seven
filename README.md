@@ -102,3 +102,18 @@ Semua progress disimpan di HP (`AsyncStorage`, key `seven.v4`). Tidak ada akun,
 tidak ada server — hanya demo GIF yang butuh internet. Tab Progress punya tombol
 SAVE BACKUP / RESTORE untuk file JSON, formatnya sama dengan canvas design jadi
 backup bisa dipindah antara keduanya.
+
+## Update dari dalam app
+
+Setiap build di GitHub Actions juga diterbitkan sebagai **Release** (`build-<nomor>`).
+App mengecek rilis terbaru saat dibuka, dan lewat tab **Progress → APP UPDATE**.
+Kalau ada build yang lebih baru: **Update** → APK terunduh → Android minta konfirmasi
+"Update" → selesai, data tetap ada.
+
+Syarat: rilisnya harus bisa dibaca tanpa login. Pilih salah satu:
+- jadikan repo ini **public**, atau
+- buat repo public terpisah (mis. `seven-releases`, isi README saja), lalu di repo ini
+  set **Variable** `RELEASE_REPO` = `pemilik/seven-releases` dan **Secret** `RELEASE_TOKEN`
+  = fine-grained token dengan izin *Contents: Read and write* untuk repo itu.
+
+Build lokal / Expo Go (build 0) tidak pernah menawarkan update.

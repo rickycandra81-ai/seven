@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT } from '../theme';
 
 const LONG_PRESS_MS = 2000;
@@ -7,6 +8,9 @@ const LONG_PRESS_MS = 2000;
 // While a logged set is being held down: says what will happen, and how to back
 // out. The bar fills over the same 2s the press needs.
 export function PressBanner({ label }: { label: string }) {
+  // the shell pads by insets.top, but absolute children ignore padding: without
+  // this the banner sits under the status bar / camera cutout
+  const insets = useSafeAreaInsets();
   const fill = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     fill.setValue(0);
@@ -14,7 +18,7 @@ export function PressBanner({ label }: { label: string }) {
   }, [label, fill]);
 
   return (
-    <View style={styles.wrap} pointerEvents="none">
+    <View style={[styles.wrap, { top: insets.top + 10 }]} pointerEvents="none">
       <View style={styles.row}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.hint}>RELEASE TO CANCEL</Text>
@@ -33,7 +37,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 14,
     right: 14,
-    top: 6,
     zIndex: 60,
     borderRadius: 14,
     overflow: 'hidden',

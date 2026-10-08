@@ -7,26 +7,44 @@
     "scheme": "seven",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "backgroundColor": "#0C0B0A",
-    "splash": {
-      "backgroundColor": "#0C0B0A",
-      "resizeMode": "contain"
-    },
-    "assetBundlePatterns": ["**/*"],
+    "backgroundColor": "#0B0D10",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ricky.seven",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
       "package": "com.ricky.seven",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "backgroundColor": "#0C0B0A"
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B0D10"
+      },
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.REQUEST_INSTALL_PACKAGES"
+      ]
     },
-    "plugins": ["expo-font", "expo-notifications"]
+    "plugins": [
+      "expo-font",
+      "expo-notifications"
+    ],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0D10"
+    },
+    "extra": {
+      "build": 0,
+      "updateRepo": "rickycandra81-ai/seven"
+    }
   }
 }

@@ -1,8 +1,8 @@
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { CelebrateOverlay } from './src/components/CelebrateOverlay';
 import { PRToast } from './src/components/PRToast';
 import { PressBanner } from './src/components/PressBanner';
@@ -13,6 +13,7 @@ import { ProgressScreen } from './src/screens/ProgressScreen';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { StoreProvider, useStore } from './src/store';
 import { COLORS } from './src/theme';
+import { canUpdate, checkForUpdate, downloadAndInstall } from './src/updater';
 
 export default function App() {
   // the five faces the design actually uses, each pulled from its own subpath so
@@ -38,6 +39,22 @@ function Shell() {
   const { state, actions } = useStore();
   const insets = useSafeAreaInsets();
   const total = DAYS[state.day - 1].exs.length;
+
+  // one quiet look for a newer build per launch; only speaks up if there is one
+  useEffect(() => {
+    if (!canUpdate()) return;
+    checkForUpdate().then((u) => {
+      if (u.phase !== 'available') return;
+      Alert.alert(
+        'Update available',
+        `Build ${u.info.build} is ready.${u.info.notes ? '\n\n' + u.info.notes.slice(0, 300) : ''}`,
+        [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Update', onPress: () => void downloadAndInstall() },
+        ]
+      );
+    });
+  }, []);
 
   return (
     <View style={{ flex: 1, paddingTop: insets.top }}>

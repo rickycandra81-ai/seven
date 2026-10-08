@@ -8,10 +8,19 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# needed to publish the APK as a GitHub Release (what the in-app updater reads)
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # where releases go: this repo by default. To keep the source private, set
+      # repo variable RELEASE_REPO to a public repo (e.g. you/seven-releases) and
+      # secret RELEASE_TOKEN to a token that can write releases there.
+      RELEASE_REPO: ${{ vars.RELEASE_REPO || github.repository }}
 
     steps:
       - uses: actions/checkout@v4
@@ -27,9 +36,10 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # the runner already ships an Android SDK; this accepts the licences and
-      # makes sure the command-line tools are on PATH so Gradle can fetch any
-      # platform it still needs (Expo SDK 54 compiles against android-36)
+      # Accept the SDK licences and install exactly what React Native 0.81 pins
+      # (node_modules/react-native/gradle/libs.versions.toml). The action's
+      # default list includes the old `tools` package, which Google has removed
+      # from the repository, so it must be overridden.
       - uses: android-actions/setup-android@v3
         with:
           packages: >-
@@ -47,6 +57,21 @@ jobs:
       # a type error is cheaper to find here than after a 15-minute native build
       - name: Type-check
         run: npx tsc --noEmit
+
+      # the run number is the build number: Android needs versionCode to grow
+      # for an update to install over the old one, and the app compares it with
+      # the latest release tag to know whether it is out of date
+      - name: Stamp build number
+        run: |
+          node -e '
+            const fs = require("fs");
+            const j = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            const n = Number(process.env.GITHUB_RUN_NUMBER);
+            j.expo.android.versionCode = n;
+            j.expo.extra = { ...(j.expo.extra || {}), build: n, updateRepo: process.env.RELEASE_REPO };
+            fs.writeFileSync("app.json", JSON.stringify(j, null, 2));
+            console.log("build", n, "->", process.env.RELEASE_REPO);
+          '
 
       # generates the android/ project from app.json — it is not in git
       - name: Prebuild android project
@@ -73,5 +98,18 @@ jobs:
         with:
           name: ${{ steps.apk.outputs.name }}
           path: ${{ steps.apk.outputs.name }}
-          retention-days: 30
+          retention-days: 7
           if-no-files-found: error
+
+      # the release the app's UPDATE button downloads; the commit message becomes
+      # the "what's new" text in the update dialog
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+        run: |
+          git log -1 --pretty=%B > notes.txt
+          gh release create "build-${GITHUB_RUN_NUMBER}" "${{ steps.apk.outputs.name }}" \
+            --repo "$RELEASE_REPO" \
+            --title "Seven build ${GITHUB_RUN_NUMBER}" \
+            --notes-file notes.txt \
+            --latest

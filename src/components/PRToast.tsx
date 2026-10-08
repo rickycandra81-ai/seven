@@ -1,11 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONT } from '../theme';
 import { Toast } from '../types';
 
 export function PRToast({ toast }: { toast: Toast }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.wrap} pointerEvents="none">
+    <View style={[styles.wrap, { top: insets.top + 10 }]} pointerEvents="none">
       <Text style={styles.badge}>NEW PR</Text>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.name} numberOfLines={1}>
@@ -24,7 +26,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    top: 6,
     zIndex: 90,
     flexDirection: 'row',
     alignItems: 'center',

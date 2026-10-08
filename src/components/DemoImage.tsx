@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Demo, demoFor } from '../gifs';
+import { demoFor, photoFallback } from '../gifs';
 import { COLORS, FONT } from '../theme';
 
 // Why this component exists:
@@ -43,29 +43,15 @@ export function DemoImage({ name }: { name: string }) {
     );
   }
 
-  if (demo.kind === 'pair') {
-    return (
-      <View key={demo.key} style={styles.pair}>
-        <Image
-          recyclingKey={demo.key + '0'}
-          source={{ uri: demo.a }}
-          style={styles.photo}
-          contentFit="cover"
-          transition={0}
-        />
-        <Image
-          recyclingKey={demo.key + '1'}
-          source={{ uri: demo.b }}
-          style={styles.photo}
-          contentFit="cover"
-          transition={0}
-        />
-      </View>
-    );
-  }
+  if (demo.kind === 'pair') return <PhotoPair id={demo.key} a={demo.a} b={demo.b} />;
 
-  // a failed demo reads as "no demo" rather than leaving the last one up
-  if (status === 'error') return <Empty text="DEMO UNAVAILABLE OFFLINE" />;
+  // a failed GIF falls back to the still photos when the move has them, and
+  // otherwise reads as "no demo" rather than leaving the last one up
+  if (status === 'error') {
+    const alt = photoFallback(name);
+    if (alt) return <PhotoPair id={'alt:' + demo.key} a={alt.a} b={alt.b} />;
+    return <Empty text="DEMO UNAVAILABLE OFFLINE" />;
+  }
 
   return (
     <View style={{ position: 'relative' }}>
@@ -87,6 +73,15 @@ export function DemoImage({ name }: { name: string }) {
         </View>
       )}
       {status === 'ok' && <Text style={styles.tag}>{demo.source}</Text>}
+    </View>
+  );
+}
+
+function PhotoPair({ id, a, b }: { id: string; a: string; b: string }) {
+  return (
+    <View key={id} style={styles.pair}>
+      <Image recyclingKey={id + '0'} source={{ uri: a }} style={styles.photo} contentFit="cover" transition={0} cachePolicy="disk" />
+      <Image recyclingKey={id + '1'} source={{ uri: b }} style={styles.photo} contentFit="cover" transition={0} cachePolicy="disk" />
     </View>
   );
 }
