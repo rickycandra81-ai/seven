@@ -93,6 +93,26 @@ async function latestFromWeb(): Promise<UpdateInfo | null> {
   return { build: Number(tag[2]), url: href[1].startsWith('/') ? 'https://github.com' + href[1] : href[1], notes: '', size: 0 };
 }
 
+// Installing never clears the cache, so every downloaded APK (~70 MB) would stay
+// behind. Once a build is installed, its APK and any older one are useless.
+export async function pruneDownloads(): Promise<void> {
+  const dir = FileSystem.cacheDirectory;
+  if (!dir) return;
+  try {
+    const names = await FileSystem.readDirectoryAsync(dir);
+    await Promise.all(
+      names
+        .filter((n) => {
+          const m = /^seven-build(\d+)\.apk$/.exec(n);
+          return !!m && Number(m[1]) <= CURRENT_BUILD;
+        })
+        .map((n) => FileSystem.deleteAsync(dir + n, { idempotent: true }))
+    );
+  } catch {
+    // a leftover file is harmless; never block the launch over it
+  }
+}
+
 export async function downloadAndInstall(): Promise<void> {
   const cur = state;
   if (cur.phase === 'ready') return openInstaller(cur.file);

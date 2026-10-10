@@ -13,7 +13,7 @@ import { ProgressScreen } from './src/screens/ProgressScreen';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { StoreProvider, useStore } from './src/store';
 import { COLORS } from './src/theme';
-import { canUpdate, checkForUpdate, downloadAndInstall } from './src/updater';
+import { canUpdate, checkForUpdate, downloadAndInstall, pruneDownloads } from './src/updater';
 
 export default function App() {
   // the five faces the design actually uses, each pulled from its own subpath so
@@ -43,6 +43,7 @@ function Shell() {
   // one quiet look for a newer build per launch; only speaks up if there is one
   useEffect(() => {
     if (!canUpdate()) return;
+    pruneDownloads();
     checkForUpdate().then((u) => {
       if (u.phase !== 'available') return;
       Alert.alert(
