@@ -29,6 +29,21 @@ export function TodayScreen() {
     .map((i) => state.prog[exId(day, i)]?.sub || D.exs[i].n)
     .join('  ·  ');
   const finishReady = doneCount === total;
+
+  // every row ticked: a pulsing FINISH floats mid-screen wherever you've
+  // scrolled, so the day doesn't go unlogged
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!finishReady) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 650, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 650, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [finishReady, pulse]);
   const sess = pace(state, day);
   const paceColor = sess.state === 'over' ? COLORS.danger : sess.state === 'behind' ? COLORS.warn : COLORS.paperDim;
 
@@ -182,6 +197,29 @@ export function TodayScreen() {
           </Text>
         </Pressable>
       </ScrollView>
+
+      {finishReady && (
+        <View pointerEvents="box-none" style={styles.floatWrap}>
+          <Animated.View style={{ transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }] }}>
+            {/* the blink is a halo behind a solid button: fading the button itself
+                lets Android's elevation shadow show through as a box */}
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.floatHalo,
+                {
+                  opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.6] }),
+                  transform: [{ scaleX: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }, { scaleY: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
+                },
+              ]}
+            />
+            <Pressable onPress={actions.finish} style={styles.floatBtn} accessibilityRole="button">
+              <Text style={styles.floatLabel}>{`FINISH DAY ${day}`}</Text>
+              <Text style={styles.floatSub}>TAP TO LOG THE SESSION</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -265,4 +303,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   finishLabel: { fontFamily: FONT.condensed700, fontSize: 15, letterSpacing: 2.4 },
+  floatWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  floatHalo: { ...StyleSheet.absoluteFillObject, borderRadius: 18, backgroundColor: COLORS.accent },
+  floatBtn: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 18,
+    paddingHorizontal: 34,
+    borderRadius: 18,
+    backgroundColor: COLORS.accent,
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  floatLabel: { fontFamily: FONT.condensed800, fontSize: 22, letterSpacing: 2.6, color: COLORS.accentInk },
+  floatSub: { fontFamily: FONT.condensed700, fontSize: 10, letterSpacing: 1.6, color: COLORS.accentInk, opacity: 0.7 },
 });

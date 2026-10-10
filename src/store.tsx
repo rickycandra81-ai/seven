@@ -184,6 +184,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (state.sessionStart && pace(state, state.day).stale) setState((s) => ({ ...s, sessionStart: null }));
   }, [hydrated, state.sessionStart, state.day]);
 
+  // the session clock has nothing else re-rendering it between sets, so it gets
+  // its own tick (the rest and timed-set ticks already cover it while they run)
+  useEffect(() => {
+    if (!state.sessionStart || (state.restId && !state.restExpired) || state.timerId) return;
+    const tick = () => setState((s) => (s.sessionStart && pace(s, s.day).stale ? { ...s, sessionStart: null } : { ...s }));
+    const iv = setInterval(tick, 1000);
+    const sub = RNAppState.addEventListener('change', (next) => {
+      if (next === 'active') tick();
+    });
+    return () => {
+      clearInterval(iv);
+      sub.remove();
+    };
+  }, [state.sessionStart, state.restId, state.restExpired, state.timerId]);
+
   // a PR banner clears itself
   useEffect(() => {
     if (!state.toast) return;

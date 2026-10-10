@@ -67,14 +67,30 @@ export async function checkForUpdate(): Promise<UpdateState> {
       headers: { Accept: 'application/vnd.github+json' },
     });
     if (res.status === 404) throw new Error('No public release found. Is the repo private?');
-    if (!res.ok) throw new Error('GitHub answered ' + res.status);
-    const info = parseRelease(await res.json());
+    // 403/429 = API rate limit (60 an hour per IP, often shared on wifi / mobile
+    // networks); the release web pages are not limited that way
+    const limited = res.status === 403 || res.status === 429;
+    if (!res.ok && !limited) throw new Error('GitHub answered ' + res.status);
+    const info = limited ? await latestFromWeb() : parseRelease(await res.json());
     if (!info) throw new Error('Latest release has no APK');
     set(info.build > CURRENT_BUILD ? { phase: 'available', info } : { phase: 'latest', checkedAt: Date.now() });
   } catch (e: any) {
     set({ phase: 'error', message: e && e.message ? e.message : 'No connection' });
   }
   return state;
+}
+
+// Same answer without the API: /releases/latest redirects to the latest tag, and
+// the tag's asset list is a small HTML fragment with the download links.
+async function latestFromWeb(): Promise<UpdateInfo | null> {
+  const page = await fetch(`https://github.com/${UPDATE_REPO}/releases/latest`);
+  const tag = /\/releases\/tag\/(build-(\d+))$/.exec(page.url);
+  if (!tag) return null;
+  const res = await fetch(`https://github.com/${UPDATE_REPO}/releases/expanded_assets/${tag[1]}`);
+  if (!res.ok) throw new Error('GitHub answered ' + res.status);
+  const href = /href="([^"]+\/releases\/download\/[^"]+\.apk)"/i.exec(await res.text());
+  if (!href) return null;
+  return { build: Number(tag[2]), url: href[1].startsWith('/') ? 'https://github.com' + href[1] : href[1], notes: '', size: 0 };
 }
 
 export async function downloadAndInstall(): Promise<void> {

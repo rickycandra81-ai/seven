@@ -50,7 +50,7 @@ export const LIB: Record<string, LibEntry> = {
   'Leg curl': { g: 'LEGS', kg: 40, p: 86, a: [] },
   'Triceps': { g: 'TRICEP', kg: 20, p: 82, a: [] },
   'Tricep': { g: 'TRICEP', kg: 20, p: 82, a: [] },
-  'Biceps': { g: 'BICEP', kg: 20, p: 82, a: [] },
+  'Cable curl': { g: 'BICEP', kg: 15, p: 88, a: [['Preacher curl', 87], ['EZ-bar curl', 86], ['Barbell curl', 85], ['Dumbbell curl', 84], ['Cable hammer curl', 84], ['Machine curl', 83], ['Incline dumbbell curl', 82], ['Hammer curl', 80]] },
   'Cable crunch': { g: 'CORE', kg: 0, p: 88, a: [['Dragon flag', 94], ['Hanging leg raise', 90], ['Ab wheel', 86], ['Decline sit-up', 82], ['Plank', 74]] },
   'Overhead press': { g: 'SHOULDER', kg: 40, p: 85, a: [['Machine shoulder press', 80], ['Seated dumbbell press', 78], ['Smith machine press', 76], ['Push press', 72], ['Cable shoulder press', 74], ['Landmine press', 68], ['Pike push-up', 64]] },
   'Dumbbell lateral raise': { g: 'SHOULDER', kg: 10, p: 90, a: [['Cable lateral raise', 92], ['Leaning cable raise', 90], ['Machine lateral raise', 88], ['Band lateral raise', 74], ['Plate side raise', 72]] },
@@ -71,7 +71,7 @@ export const LIB: Record<string, LibEntry> = {
   'Back squat': { g: 'LEGS', kg: 80, p: 88, a: [['Hack squat', 90], ['Front squat', 86], ['Smith machine squat', 85], ['Belt squat', 84], ['Leg press', 82], ['Goblet squat', 76]] },
   'Romanian deadlift': { g: 'LEGS', kg: 70, p: 85, a: [['Seated leg curl', 88], ['Lying leg curl', 86], ['Single-leg RDL', 82], ['Good morning', 80], ['Cable pull-through', 76], ['Hip thrust', 70]] },
   'Leg press': { g: 'LEGS', kg: 100, p: 82, a: [['Hack squat', 90], ['Bulgarian split squat', 86], ['Smith machine squat', 85], ['Leg extension', 80], ['Goblet squat', 74]] },
-  'Standing calf raise': { g: 'LEGS', kg: 40, p: 92, a: [['Single-leg calf raise', 90], ['Seated calf raise', 88], ['Smith machine calf raise', 88], ['Donkey calf raise', 87], ['Leg press calf raise', 86]] },
+  'Standing calf raise': { g: 'LEGS', kg: 40, p: 92, a: [['Dumbbell single-leg calf raise', 90], ['Hack squat single-leg calf raise', 89], ['Seated calf raise', 88], ['Smith machine calf raise', 88], ['Donkey calf raise', 87], ['Leg press calf raise', 86]] },
   'Tricep dip': { g: 'TRICEP', kg: 0, p: 80, a: [['Overhead cable extension', 88], ['Skull crusher', 85], ['Rope pushdown', 85], ['Single-arm cable extension', 82], ['Close-grip bench press', 74], ['Bench dip', 72]] },
   'Tricep rope pushdown': { g: 'TRICEP', kg: 20, p: 85, a: [['Overhead rope extension', 88], ['Skull crusher', 85], ['Single-arm cable extension', 84], ['Bar pushdown', 82], ['Close-grip bench press', 74], ['Dumbbell kickback', 72]] },
   'Barbell curl': { g: 'BICEP', kg: 25, p: 85, a: [['Cable curl', 88], ['Preacher curl', 87], ['EZ-bar curl', 86], ['Dumbbell curl', 84], ['Machine curl', 83], ['Incline dumbbell curl', 82]] },
@@ -122,10 +122,11 @@ export const ALIAS: Record<string, string> = {
   'Cable fly': 'Pec fly', 'Machine chest press': 'Chest press',
   'Wide lat pull': 'Wide lat pull', 'Pull-up': 'Pull up',
   'Pistol squat': 'Pistol Squat', 'Tricep rope pushdown': 'Triceps',
-  'Tricep dip': 'Triceps', 'Barbell curl': 'Biceps', 'Hammer curl': 'Biceps',
+  'Tricep dip': 'Triceps', 'Biceps': 'Cable curl',
   'Tricep': 'Triceps',
   'Bodyweight dip': 'Weighted dip', 'Rope pushdown': 'Tricep rope pushdown',
   'Leg curl': 'Seated leg curl',
+  'Single-leg calf raise': 'Dumbbell single-leg calf raise',
 };
 
 // different names for the same movement — collapsed before the duplicate check
@@ -174,11 +175,11 @@ export const PAT_LABEL: Record<string, string> = {
 type RawEx = string | [string, number];
 const RAW_DAYS: { focus: string; exs: RawEx[] }[] = [
   { focus: 'SHOULDERS', exs: ['Pull up', 'Dumbbell lateral raise', 'Front raise', 'Reverse fly', ['Shoulder press', 1], ['Face pull', 1], 'Triceps', 'Cable crunch'] },
-  { focus: 'BACK', exs: ['Pull up', ['Straight-arm pulldown', 1], 'Pulley', ['Wide lat pull', 1], '45 roman chair', 'Close lat pull', 'Biceps', 'Cable crunch'] },
+  { focus: 'BACK', exs: ['Pull up', ['Straight-arm pulldown', 1], 'Pulley', ['Wide lat pull', 1], '45 roman chair', 'Close lat pull', 'Cable curl', 'Cable crunch'] },
   { focus: 'CHEST', exs: ['Pull up', 'Chest press', 'Dumbell Bench press', 'Incline bench press', ['Pec fly', 1], ['Chest dip', 1], 'Triceps', 'Cable crunch'] },
-  { focus: 'LEGS', exs: ['Pull up', 'Calves raises', 'Front squat', 'Leg extension', 'Pistol Squat', 'Leg curl', 'Biceps', 'Cable crunch'] },
+  { focus: 'LEGS', exs: ['Pull up', 'Calves raises', 'Front squat', 'Leg extension', 'Pistol Squat', 'Leg curl', 'Cable curl', 'Cable crunch'] },
   { focus: 'FULL · SHOULDER LED', exs: ['Pull up', 'Face pull', ['Shoulder press', 1], 'Abductor', ['Straight-arm pulldown', 1], 'Pec fly', 'Triceps', 'Cable crunch'] },
-  { focus: 'FULL · BACK LED', exs: ['Pull up', ['Barbell row', 1], 'Dumbbell lateral raise', ['45 roman chair', 1], 'Bench press', 'Pistol Squat', 'Biceps', 'Cable crunch'] },
+  { focus: 'FULL · BACK LED', exs: ['Pull up', ['Barbell row', 1], 'Dumbbell lateral raise', ['45 roman chair', 1], 'Bench press', 'Pistol Squat', 'Cable curl', 'Cable crunch'] },
   { focus: 'FULL · CHEST LED', exs: ['Pull up', 'Lat pull', 'Front squat', ['Chest dip', 1], ['Bench press', 1], 'Dumbbell lateral raise', 'Cable crunch', 'Triceps'] },
 ];
 
