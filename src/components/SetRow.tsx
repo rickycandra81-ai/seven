@@ -14,7 +14,7 @@ export interface SetRowProps {
   resting: boolean;
   onLoadText: (v: string) => void;
   onLoadBlur: () => void;
-  onLoadStep: (d: number) => void;
+  onLoadStep: (dir: 1 | -1) => void;
   onRepsStep: (d: number) => void;
   onTap: () => void;
   onForce: () => void;
@@ -87,7 +87,7 @@ export function SetRow(p: SetRowProps) {
       {now ? (
         <>
           <View style={styles.stepper}>
-            <Pressable onPress={() => p.onLoadStep(-2.5)} style={[styles.stepBtn, styles.stepLeft, { backgroundColor: COLORS.loadSoft }]}>
+            <Pressable onPress={() => p.onLoadStep(-1)} style={[styles.stepBtn, styles.stepLeft, { backgroundColor: COLORS.loadSoft }]}>
               <Text style={[styles.stepSym, { color: COLORS.load }]}>−</Text>
             </Pressable>
             <TextInput
@@ -97,7 +97,7 @@ export function SetRow(p: SetRowProps) {
               keyboardType="decimal-pad"
               style={[styles.field, { color: COLORS.load }]}
             />
-            <Pressable onPress={() => p.onLoadStep(2.5)} style={[styles.stepBtn, styles.stepRight, { backgroundColor: COLORS.loadSoft }]}>
+            <Pressable onPress={() => p.onLoadStep(1)} style={[styles.stepBtn, styles.stepRight, { backgroundColor: COLORS.loadSoft }]}>
               <Text style={[styles.stepSym, { color: COLORS.load }]}>+</Text>
             </Pressable>
           </View>

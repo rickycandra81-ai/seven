@@ -78,6 +78,11 @@ export const LIB: Record<string, LibEntry> = {
   'Hammer curl': { g: 'BICEP', kg: 14, p: 80, a: [['Cable hammer curl', 84], ['Rope hammer curl', 83], ['Incline dumbbell curl', 82], ['Zottman curl', 76], ['Reverse curl', 68]] },
 };
 
+// machines in the user's gym that top out below what the plan could ask for (kg)
+export const MAX_KG: Record<string, number> = {
+  'Cable crunch': 100,
+};
+
 // movement pattern per planned move — extras only join a list of the same pattern
 export const PAT: Record<string, string> = {
   'Pull-up': 'vpull', 'Lat pulldown': 'vpull',

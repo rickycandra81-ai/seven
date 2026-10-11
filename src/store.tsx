@@ -21,6 +21,8 @@ import {
   loadKey,
   lockFocusIndex,
   migrateLoads,
+  fitLoad,
+  stepLoad,
   nextFours,
   nextPending,
   P,
@@ -50,7 +52,7 @@ interface Actions {
   setHeavy: (day: number, i: number, want: boolean) => void;
   tapSet: (exId: string, j: number) => void;
   forceSet: (exId: string, j: number) => void;
-  bumpLoad: (name: string, d: number) => void;
+  bumpLoad: (name: string, dir: 1 | -1) => void;
   toggleUnit: () => void;
   onLoadText: (key: string, valStr: string) => void;
   onLoadBlur: (name: string, valStr: string) => void;
@@ -98,6 +100,21 @@ export function saveBlob(state: AppState) {
   const { day, prog, holdBest, doneDays, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr } =
     state;
   return { day, prog, holdBest, doneDays, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr };
+}
+
+// A load typed into the field only used to land on blur, and Android keeps the
+// field focused when the keyboard closes — so ✓ or ± right after typing acted on
+// the old load. Anything still pending is committed first.
+function commitTyped(s: AppState): AppState {
+  const keys = Object.keys(s.loadText);
+  if (!keys.length) return s;
+  const unit = s.unit || SETTINGS.weightUnit;
+  const loads = { ...s.loads };
+  keys.forEach((k) => {
+    const v = parseFloat(s.loadText[k]);
+    if (!isNaN(v) && v >= 0) loads[k] = fitLoad(k, unit === 'kg' ? v : v / 2.20462);
+  });
+  return { ...s, loads, loadText: {} };
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -361,7 +378,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // back. Long-press is the single escape hatch — it skips the rest gate going
       // forward and rewinds logged sets going back (wrong exercise picked by mistake).
       tapSet: (exId, j) =>
-        setState((s) => {
+        setState((s0) => {
+          const s = commitTyped(s0);
           const cur = P(s, exId).sets || 0;
           if (j !== cur) return s;
           const [d0, i0] = exId.split('-').map(Number);
@@ -371,7 +389,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }),
       forceSet: (exId, j) => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-        setState((s) => {
+        setState((s0) => {
+          const s = commitTyped(s0);
           const cur = P(s, exId).sets || 0;
           const [d0, i0] = exId.split('-').map(Number);
           if (cur === 0 && busyOther(s, d0, i0)) return { ...s, pressingId: null };
@@ -379,11 +398,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         });
       },
       // load lives on the move, so it follows a swap and carries across days
-      bumpLoad: (name, d) =>
-        setState((s) => {
-          const k = loadKey(name);
-          const v = Math.max(0, Math.round((getLoad(s, name) + d) * 10) / 10);
-          return { ...s, loads: { ...s.loads, [k]: v } };
+      bumpLoad: (name, dir) =>
+        setState((s0) => {
+          const s = commitTyped(s0);
+          return { ...s, loads: { ...s.loads, [loadKey(name)]: stepLoad(name, getLoad(s, name), dir) } };
         }),
       toggleUnit: () =>
         setState((s) => ({ ...s, unit: ((s.unit || SETTINGS.weightUnit) === 'kg' ? 'lb' : 'kg') as WeightUnit })),
@@ -396,7 +414,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const v = parseFloat(valStr);
           if (isNaN(v) || v < 0) return { ...s, loadText };
           const unit = s.unit || SETTINGS.weightUnit;
-          const kg = Math.max(0, Math.round((unit === 'kg' ? v : v / 2.20462) * 10) / 10);
+          const kg = fitLoad(name, unit === 'kg' ? v : v / 2.20462);
           return { ...s, loadText, loads: { ...s.loads, [loadKey(name)]: kg } };
         }),
       // once a set is logged the planned move is locked in — no more swapping
@@ -563,7 +581,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           return { ...s, timerId: exId, timerStartAt: Date.now(), elapsed: 0 };
         }),
       applySuggest: (name, kg) =>
-        setState((s) => ({ ...s, loads: { ...s.loads, [loadKey(name)]: Math.max(0, Math.round(kg * 10) / 10) } })),
+        setState((s) => ({ ...s, loads: { ...s.loads, [loadKey(name)]: fitLoad(name, kg) } })),
       clearToast: () => setState((s) => ({ ...s, toast: null })),
       // holding a set button shows a banner the whole time, with a tick of haptic
       // feedback so the gesture is obvious without looking

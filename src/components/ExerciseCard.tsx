@@ -15,6 +15,7 @@ import {
   id as exId,
   isHeavyBlocked,
   lastLine,
+  LOAD_STEP,
   loadKey,
   lv,
   midIdx,
@@ -229,16 +230,16 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
             {showAdjust && (
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 <Pressable
-                  onPress={() => actions.bumpLoad(shownName, unit === 'kg' ? -5 : -5 / 2.20462)}
+                  onPress={() => actions.bumpLoad(shownName, -1)}
                   style={styles.adjustBtn}
                 >
-                  <Text style={styles.adjustText}>−5</Text>
+                  <Text style={styles.adjustText}>{`−${conv(LOAD_STEP)}`}</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => actions.bumpLoad(shownName, unit === 'kg' ? 5 : 5 / 2.20462)}
+                  onPress={() => actions.bumpLoad(shownName, 1)}
                   style={styles.adjustBtn}
                 >
-                  <Text style={styles.adjustText}>+5</Text>
+                  <Text style={styles.adjustText}>{`+${conv(LOAD_STEP)}`}</Text>
                 </Pressable>
               </View>
             )}

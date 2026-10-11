@@ -3,7 +3,7 @@
 
 import { BODY_FRONT, BODY_MUSCLES, BODY_BACK, BodyRegion, MUS_REGION } from './body';
 import { breakdownFor } from './content';
-import { CANON, DAYS, LIB, POOL } from './data';
+import { CANON, DAYS, LIB, MAX_KG, POOL } from './data';
 import { SK } from './skills';
 import { AppState, HistEntry, KgSeries, ProgEntry, SETTINGS } from './types';
 
@@ -222,13 +222,27 @@ export interface Suggestion {
   kg: number;
 }
 
+// the gym's weights move in 5 kg steps, and some machines top out (MAX_KG)
+export const LOAD_STEP = 5;
+export function fitLoad(name: string, kg: number): number {
+  const v = Math.max(0, Math.round(kg / LOAD_STEP) * LOAD_STEP);
+  const max = MAX_KG[CANON(name)];
+  return max === undefined ? v : Math.min(max, v);
+}
+
+// one step up or down from any load, landing on the next real 5 kg mark
+export function stepLoad(name: string, kg: number, dir: 1 | -1): number {
+  return fitLoad(name, dir > 0 ? Math.floor(kg / LOAD_STEP + 1e-9) * LOAD_STEP + LOAD_STEP : Math.ceil(kg / LOAD_STEP - 1e-9) * LOAD_STEP - LOAD_STEP);
+}
+
 // every set of the last session hit the rep target at a weight you have not beaten
-// yet — time to add 2.5 kg.
+// yet — time for the next 5 kg step, unless the machine is already maxed out.
 export function suggestion(state: AppState, canon: string, need: number, loadKg: number, sets: number): Suggestion {
   const last = state.lastLog[canon];
   const hit =
     !!last && last.kg > 0 && !!last.reps && last.reps.length >= need && last.reps.every((r) => r >= SETTINGS.repTarget);
-  return { show: hit && sets === 0 && loadKg <= (last as { kg: number }).kg, kg: hit ? (last as { kg: number }).kg + 2.5 : 0 };
+  const kg = hit ? stepLoad(canon, (last as { kg: number }).kg, 1) : 0;
+  return { show: hit && kg > (last as { kg: number }).kg && sets === 0 && loadKg <= (last as { kg: number }).kg, kg };
 }
 
 const conv = (kg: number, unit: 'kg' | 'lb') => (unit === 'kg' ? kg : Math.round(kg * 2.20462 * 10) / 10);
