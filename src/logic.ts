@@ -187,6 +187,14 @@ export function lv(state: AppState, L: string): number {
   return Math.min((state.skillLv || {})[L] || 0, SK[L].steps.length - 1);
 }
 
+// what a row is called on screen: a skill row by its current ladder step, a
+// lift by the swap it is doing, otherwise the planned move
+export function rowName(state: AppState, day: number, i: number): string {
+  const e = DAYS[day - 1].exs[i];
+  if (e.k === 'hold' && e.L) return SK[e.L].steps[lv(state, e.L)][0];
+  return P(state, id(day, i)).sub || e.n;
+}
+
 export function clampLevel(L: string, j: number): number {
   return Math.max(0, Math.min(SK[L].steps.length - 1, j));
 }

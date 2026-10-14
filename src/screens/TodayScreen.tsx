@@ -4,7 +4,7 @@ import { DayPips } from '../components/DayPips';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { ExerciseStrip } from '../components/ExerciseStrip';
 import { DAYS } from '../data';
-import { countDone, curIdx, fours, heavyCount, id as exId, pace } from '../logic';
+import { countDone, curIdx, fours, heavyCount, pace, rowName } from '../logic';
 import { useStore } from '../store';
 import { COLORS, FONT } from '../theme';
 
@@ -26,7 +26,7 @@ export function TodayScreen() {
   const heavyNames = heavyIdxs
     .slice()
     .sort((a, b) => a - b)
-    .map((i) => state.prog[exId(day, i)]?.sub || D.exs[i].n)
+    .map((i) => rowName(state, day, i))
     .join('  ·  ');
   const finishReady = doneCount === total;
 
@@ -50,6 +50,7 @@ export function TodayScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const cardRef = useRef<View>(null);
   const contentRef = useRef<View>(null);
+  const stripH = useRef(58); // the pinned strip's height: a card lands just below it
 
   // bring the card under the sticky strip whenever it changes
   const prevCur = useRef(cur);
@@ -64,7 +65,7 @@ export function TodayScreen() {
       // @ts-ignore measureLayout exists on native view instances
       node.measureLayout(
         content,
-        (_x: number, y: number) => scrollRef.current?.scrollTo({ y: Math.max(0, y - 58), animated: true }),
+        (_x: number, y: number) => scrollRef.current?.scrollTo({ y: Math.max(0, y - stripH.current), animated: true }),
         () => {}
       );
     });
@@ -155,8 +156,13 @@ export function TodayScreen() {
           )}
         </View>
 
-        <View style={styles.strip}>
+        <View style={styles.strip} onLayout={(ev) => (stripH.current = ev.nativeEvent.layout.height)}>
           <ExerciseStrip state={state} day={day} cur={cur} onPick={actions.goEx} />
+          {/* the strip stays pinned while you scroll the set table, so the move's
+              name rides along with it */}
+          <Text style={styles.stripName} numberOfLines={1}>
+            {`${String(cur + 1).padStart(2, '0')} · ${rowName(state, day, cur)}`}
+          </Text>
         </View>
 
         <View ref={cardRef} style={{ marginTop: 14 }}>
@@ -174,7 +180,7 @@ export function TodayScreen() {
               <View style={{ minWidth: 0, gap: 4 }}>
                 <Text style={styles.nextLabel}>NEXT</Text>
                 <Text style={styles.nextName} numberOfLines={1}>
-                  {state.prog[exId(day, cur + 1)]?.sub || D.exs[cur + 1].n}
+                  {rowName(state, day, cur + 1)}
                 </Text>
               </View>
               <Text style={styles.nextArrow}>→</Text>
@@ -265,6 +271,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.fillSoft,
   },
+  stripName: { fontFamily: FONT.condensed700, fontSize: 15, letterSpacing: 1.2, color: COLORS.paper, marginTop: 8 },
   prevBtn: {
     width: 56,
     height: 54,

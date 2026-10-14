@@ -14,6 +14,7 @@ import {
   getLoad,
   id as exId,
   isHeavyBlocked,
+  fitLoad,
   lastLine,
   LOAD_STEP,
   loadKey,
@@ -60,6 +61,10 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
   const loadKg = getLoad(state, shownName, legacyKg);
   const loadDisp = conv(loadKg);
   const loadText = lk in state.loadText ? state.loadText[lk] : String(loadDisp);
+  // while a load is being typed, the sets still to come preview it (as it will be
+  // saved, on the 5 kg grid) instead of the old number
+  const typed = parseFloat(loadText);
+  const upcomingKg = lk in state.loadText && !isNaN(typed) && typed >= 0 ? fitLoad(shownName, unit === 'kg' ? typed : typed / 2.20462) : loadKg;
 
   const canHeavy = eligibleHeavy(day, idx) && !autoHeavy(day);
   const heavy = need === 4;
@@ -201,7 +206,7 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
             {Array.from({ length: need }, (_, j) => {
               const logged = j < sets;
               const now = j === sets && !done;
-              const kv = logged && (p.kgs || [])[j] != null ? (p.kgs as number[])[j] : loadKg;
+              const kv = logged && (p.kgs || [])[j] != null ? (p.kgs as number[])[j] : upcomingKg;
               return (
                 <SetRow
                   key={j}
