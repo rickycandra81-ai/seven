@@ -16,7 +16,7 @@ import {
   isHeavyBlocked,
   fitLoad,
   lastLine,
-  LOAD_STEP,
+  loadStep,
   loadKey,
   lv,
   midIdx,
@@ -238,13 +238,13 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
                   onPress={() => actions.bumpLoad(shownName, -1)}
                   style={styles.adjustBtn}
                 >
-                  <Text style={styles.adjustText}>{`−${conv(LOAD_STEP)}`}</Text>
+                  <Text style={styles.adjustText}>{`−${conv(loadStep(shownName))}`}</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => actions.bumpLoad(shownName, 1)}
                   style={styles.adjustBtn}
                 >
-                  <Text style={styles.adjustText}>{`+${conv(LOAD_STEP)}`}</Text>
+                  <Text style={styles.adjustText}>{`+${conv(loadStep(shownName))}`}</Text>
                 </Pressable>
               </View>
             )}

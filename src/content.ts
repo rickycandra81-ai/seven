@@ -130,6 +130,7 @@ const HOWTO: Record<string, string> = {
   'Leg curl': 'Curl your heels toward your glutes, pause, lower with control against the pad.',
   'Seated leg curl': 'Pad against your shins, curl your heels down and under the seat.',
   'Lying leg curl': 'Face down, curl your heels toward your glutes, control the lowering.',
+  'Deadlift': 'Bar over mid-foot, flat back, push the floor away and stand tall, lower with control.',
   'Romanian deadlift': 'Soft knees, push hips back, bar close to your legs, feel the stretch in your hamstrings.',
   'Single-leg RDL': 'One leg planted, hinge forward as the other leg lifts back, keep hips square.',
   'Good morning': 'Bar on your back, hinge at the hips with a slight knee bend, keep your back flat.',
@@ -190,6 +191,7 @@ function muscleBreakdown(name: string): Breakdown | null {
   const n = name.toLowerCase();
   if (/face pull|reverse (fly|pec)|rear delt|rope upright|pull-apart/.test(n)) return [['Rear Delts', 55], ['Traps', 25], ['Rhomboids', 20]];
   if (/pullover|straight-arm/.test(n)) return [['Lats', 70], ['Triceps', 18], ['Chest', 12]];
+  if (n === 'deadlift') return [['Erectors', 30], ['Glutes', 28], ['Hamstrings', 22], ['Lats', 12], ['Traps', 8]];
   if (/deadlift|good morning|pull-through|rdl/.test(n)) return [['Hamstrings', 48], ['Glutes', 34], ['Erectors', 18]];
   if (/tricep dip|bench dip|close-grip/.test(n)) return [['Triceps', 78], ['Front Delts', 12], ['Chest', 10]];
   if (/row|pulldown|pull-up|pull up|chin-up|inverted row/.test(n)) return [['Lats', 52], ['Biceps', 22], ['Rear Delts', 16], ['Traps', 10]];
@@ -291,7 +293,7 @@ export const MANDARIN: Record<string, [string, string]> = {
   'Assisted pistol squat': ['辅助单腿深蹲', 'Fǔzhù dāntuǐ shēndūn'], 'Walking lunge': ['行走弓步', 'Xíngzǒu gōngbù'],
   'Step-up': ['上箱蹬', 'Shàng xiāng dēng'], 'Leg curl': ['腿弯举', 'Tuǐ wānjǔ'],
   'Seated leg curl': ['坐姿腿弯举', 'Zuòzī tuǐ wānjǔ'], 'Lying leg curl': ['俯卧腿弯举', 'Fǔwò tuǐ wānjǔ'],
-  'Romanian deadlift': ['罗马尼亚硬拉', 'Luómǎníyà yìnglā'], 'Single-leg RDL': ['单腿罗马尼亚硬拉', 'Dāntuǐ luómǎníyà yìnglā'],
+  'Deadlift': ['硬拉', 'Yìnglā'], 'Romanian deadlift': ['罗马尼亚硬拉', 'Luómǎníyà yìnglā'], 'Single-leg RDL': ['单腿罗马尼亚硬拉', 'Dāntuǐ luómǎníyà yìnglā'],
   'Good morning': ['早安式', "Zǎo'ān shì"], 'Cable pull-through': ['绳索硬拉', 'Shéngsuǒ yìnglā'],
   'Hip thrust': ['臀桥', 'Tún qiáo'], 'Triceps': ['三头肌训练', 'Sāntóujī xùnliàn'],
   'Tricep': ['三头肌训练', 'Sāntóujī xùnliàn'], 'Tricep dip': ['三头肌臂屈伸', 'Sāntóujī bìqūshēn'],

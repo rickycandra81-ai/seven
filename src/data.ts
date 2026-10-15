@@ -34,7 +34,7 @@ export const LIB: Record<string, LibEntry> = {
   'Wide lat pull': { g: 'BACK', kg: 55, p: 85, a: [] },
   'Close lat pull': { g: 'BACK', kg: 50, p: 83, a: [] },
   'Lat pull': { g: 'BACK', kg: 55, p: 85, a: [] },
-  '45 roman chair': { g: 'BACK', kg: 0, p: 72, a: [] },
+  '45 roman chair': { g: 'BACK', kg: 0, p: 72, a: [['Deadlift', 80]] },
   'Chest press': { g: 'CHEST', kg: 50, p: 82, a: [] },
   'Dumbell Bench press': { g: 'CHEST', kg: 24, p: 85, a: [] },
   'Incline bench press': { g: 'CHEST', kg: 40, p: 82, a: [] },
@@ -82,6 +82,12 @@ export const LIB: Record<string, LibEntry> = {
 export const MAX_KG: Record<string, number> = {
   'Cable crunch': 100,
 };
+
+// Free weights in the user's gym come in odd sizes (12.5 kg, 24 kg bars,
+// dumbbells by 1 kg), so they are not held to the machines' 5 kg pin steps.
+const FREE = /barbell|dumbbell|dumbell|ez-bar|bench press|front squat|back squat|goblet|bulgarian|deadlift|rdl|good morning|hip thrust|t-bar|seal row|landmine|plate|kettlebell|skull crusher|kickback|overhead press|push press|arnold|lateral raise|front raise|hammer curl|zottman|reverse curl|preacher|weighted|floor press|lunge|step-up|dip/i;
+const MACHINE = /machine|smith|cable|rope/i;
+export const isFreeWeight = (name: string): boolean => FREE.test(name) && !MACHINE.test(name);
 
 // movement pattern per planned move — extras only join a list of the same pattern
 export const PAT: Record<string, string> = {
