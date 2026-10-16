@@ -64,7 +64,7 @@ export const LIB: Record<string, LibEntry> = {
   'Straight-arm pulldown': { g: 'BACK', kg: 25, p: 84, a: [['Standing cable row', 80], ['Cable pullover', 76], ['Machine pullover', 74], ['Dumbbell pullover', 70], ['Band pulldown', 60]] },
   'Bench press': { g: 'CHEST', kg: 60, p: 80, a: [['Dumbbell bench press', 85], ['Machine chest press', 82], ['Smith machine bench', 78], ['Floor press', 76], ['Cable chest press', 74], ['Weighted push-up', 70]] },
   'Incline dumbbell press': { g: 'CHEST', kg: 22, p: 82, a: [['Incline machine press', 80], ['Incline cable press', 79], ['Incline barbell press', 78], ['Low-to-high cable fly', 76], ['Incline push-up', 64]] },
-  'Cable fly': { g: 'CHEST', kg: 15, p: 90, a: [['High-to-low cable fly', 89], ['Low-to-high cable fly', 88], ['Cross-body cable fly', 89], ['Pec deck', 88], ['Dumbbell fly', 85], ['Incline dumbbell fly', 84], ['Band fly', 74]] },
+  'Cable fly': { g: 'CHEST', kg: 15, p: 90, a: [['High-to-low cable fly', 89], ['Low-to-high cable fly', 88], ['Cross-body cable fly', 89], ['Butterfly', 88], ['Dumbbell fly', 85], ['Incline dumbbell fly', 84], ['Band fly', 74]] },
   'Weighted dip': { g: 'CHEST', kg: 10, p: 75, a: [['Machine chest press', 82], ['Decline bench press', 78], ['Dip machine', 72], ['Bodyweight dip', 70], ['Decline push-up', 66]] },
   'Push-up to failure': { g: 'CHEST', kg: 0, p: 70, a: [['Machine chest press', 82], ['Dumbbell floor press', 78], ['Deficit push-up', 74], ['Cable chest press', 74], ['Band push-up', 68]] },
   'Pistol squat': { g: 'LEGS', kg: 0, p: 85, a: [['Bulgarian split squat', 88], ['Box pistol squat', 84], ['Assisted pistol squat', 82], ['Walking lunge', 80], ['Step-up', 78]] },
@@ -138,6 +138,7 @@ export const ALIAS: Record<string, string> = {
   'Bodyweight dip': 'Weighted dip', 'Rope pushdown': 'Tricep rope pushdown',
   'Leg curl': 'Seated leg curl',
   'Single-leg calf raise': 'Dumbbell single-leg calf raise',
+  'Pec deck': 'Butterfly',
 };
 
 // different names for the same movement — collapsed before the duplicate check

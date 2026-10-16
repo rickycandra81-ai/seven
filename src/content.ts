@@ -87,7 +87,7 @@ const HOWTO: Record<string, string> = {
   'Pec fly': 'Arms slightly bent, bring them together in front of your chest, control the stretch back.',
   'Cable fly': 'Cables at shoulder height, bring hands together in front of your chest.',
   'Cross-body cable fly': 'One cable, pull across your body to the opposite hip, squeeze the chest.',
-  'Pec deck': 'Elbows on the pads, bring them together in front of your chest.',
+  'Butterfly': 'Seated, arms out on the handles, sweep them together in front of your chest, slow return.',
   'Dumbbell fly': 'Lying on a bench, lower dumbbells out to the sides, bring them back together over your chest.',
   'Incline dumbbell fly': 'Incline bench, lower dumbbells out to the sides, bring them back over your upper chest.',
   'Band fly': 'Anchor a band behind you, bring hands together in front of your chest.',
@@ -198,7 +198,7 @@ function muscleBreakdown(name: string): Breakdown | null {
   if (/lateral raise|side raise/.test(n)) return [['Side Delts', 82], ['Front Delts', 10], ['Traps', 8]];
   if (/front raise/.test(n)) return [['Front Delts', 80], ['Side Delts', 14], ['Chest', 6]];
   if (/arnold|overhead press|shoulder press|push press|pike push|landmine press/.test(n)) return [['Front Delts', 48], ['Side Delts', 30], ['Triceps', 22]];
-  if (/fly|pec deck/.test(n)) return [['Chest', 78], ['Front Delts', 22]];
+  if (/fly|pec deck|butterfly/.test(n)) return [['Chest', 78], ['Front Delts', 22]];
   if (/bench press|chest press|floor press|push-up|dip/.test(n)) return [['Chest', 58], ['Triceps', 26], ['Front Delts', 16]];
   if (/leg extension/.test(n)) return [['Quads', 92], ['Hip Flexors', 8]];
   if (/leg curl/.test(n)) return [['Hamstrings', 85], ['Calves', 15]];
@@ -271,7 +271,7 @@ export const MANDARIN: Record<string, [string, string]> = {
   'Incline barbell press': ['上斜杠铃卧推', 'Shàngxié gànglíng wòtuī'], 'Low-to-high cable fly': ['下上夹胸', 'Xià shàng jiā xiōng'], 'High-to-low cable fly': ['上下夹胸', 'Shàng xià jiā xiōng'],
   'Incline push-up': ['上斜俯卧撑', 'Shàngxié fǔwòchēng'], 'Pec fly': ['夹胸', 'Jiā xiōng'],
   'Cable fly': ['绳索夹胸', 'Shéngsuǒ jiā xiōng'], 'Cross-body cable fly': ['交叉绳索夹胸', 'Jiāochā shéngsuǒ jiā xiōng'],
-  'Pec deck': ['蝴蝶机夹胸', 'Húdié jī jiā xiōng'], 'Dumbbell fly': ['哑铃飞鸟', 'Yǎlíng fēiniǎo'],
+  'Butterfly': ['蝴蝶机夹胸', 'Húdié jī jiā xiōng'], 'Dumbbell fly': ['哑铃飞鸟', 'Yǎlíng fēiniǎo'],
   'Incline dumbbell fly': ['上斜哑铃飞鸟', 'Shàngxié yǎlíng fēiniǎo'], 'Band fly': ['弹力带夹胸', 'Tánlìdài jiā xiōng'],
   'Chest dip': ['双杠臂屈伸', 'Shuānggàng bìqūshēn'], 'Weighted dip': ['负重双杠臂屈伸', 'Fùzhòng shuānggàng bìqūshēn'],
   'Decline bench press': ['下斜卧推', 'Xiàxié wòtuī'], 'Dip machine': ['双杠臂屈伸机', 'Shuānggàng bìqūshēn jī'],
