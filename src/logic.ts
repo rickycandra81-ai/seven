@@ -281,6 +281,16 @@ export function lastLine(state: AppState, canon: string, unit: 'kg' | 'lb'): str
   return 'LAST  ' + bits.join(' ') + '  ·  ' + (ago === 0 ? 'TODAY' : ago === 1 ? 'YESTERDAY' : ago + ' DAYS AGO');
 }
 
+// the heaviest set ever logged for the move, so a deliberately lighter day (legs
+// after a morning run) never hides what you are actually capable of
+export function bestLine(state: AppState, canon: string, unit: 'kg' | 'lb'): string {
+  const pr = state.pr[canon];
+  if (!pr) return '';
+  const ago = Math.floor((Date.now() - pr.t) / 86400000);
+  const set = pr.kg ? conv(pr.kg, unit) + ' ' + unit.toUpperCase() + ' × ' + pr.reps : pr.reps + ' REPS';
+  return 'BEST  ' + set + '  ·  ' + (ago === 0 ? 'TODAY' : ago === 1 ? 'YESTERDAY' : ago + ' DAYS AGO');
+}
+
 // best estimated 1RM from last session, plus what the set about to be logged
 // would come out at.
 export function e1rmLine(state: AppState, canon: string, loadKg: number, reps: number, unit: 'kg' | 'lb'): string {

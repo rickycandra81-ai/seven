@@ -6,6 +6,7 @@ import { CANON, DAYS } from '../data';
 import { DemoImage, prefetchDemos } from './DemoImage';
 import {
   autoHeavy,
+  bestLine,
   busyOther,
   canLevelUp,
   doneOf,
@@ -82,6 +83,7 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
   const canon = CANON(shownName);
   const reps = repsVal(state, id);
   const last = hold ? '' : lastLine(state, canon, unit);
+  const bestSet = hold ? '' : bestLine(state, canon, unit);
   const e1 = hold ? '' : e1rmLine(state, canon, loadKg, reps, unit);
   const sug = hold ? { show: false, kg: 0 } : suggestion(state, canon, need, loadKg, sets);
   const showAdjust = !hold && sets > 0 && sets < need;
@@ -163,9 +165,10 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
 
       {!hold && (
         <View style={{ gap: 12 }}>
-          {!!last && (
+          {!!(last || bestSet) && (
             <View style={styles.lastBox}>
-              <Text style={styles.lastLine}>{last}</Text>
+              {!!last && <Text style={styles.lastLine}>{last}</Text>}
+              {!!bestSet && <Text style={styles.bestLine}>{bestSet}</Text>}
               {!!e1 && <Text style={styles.e1Line}>{e1}</Text>}
             </View>
           )}
@@ -452,6 +455,7 @@ const styles = StyleSheet.create({
   levelUpText: { fontFamily: FONT.condensed700, fontSize: 12, letterSpacing: 1.2, color: COLORS.accentInk },
   lastBox: { gap: 6, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 12, backgroundColor: COLORS.inner },
   lastLine: { fontFamily: FONT.condensed700, fontSize: 12, lineHeight: 16, letterSpacing: 0.9, color: COLORS.paperDim },
+  bestLine: { fontFamily: FONT.condensed700, fontSize: 12, lineHeight: 16, letterSpacing: 0.9, color: COLORS.load },
   e1Line: { fontFamily: FONT.condensed700, fontSize: 12, lineHeight: 16, letterSpacing: 0.9, color: COLORS.paperFaint },
   suggest: {
     flexDirection: 'row',
