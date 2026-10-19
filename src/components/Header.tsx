@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { pace } from '../logic';
 import { restDone, restRemaining, useStore } from '../store';
 import { COLORS, FONT, fmtTime } from '../theme';
@@ -10,6 +10,14 @@ export function Header({ onReset }: { onReset: () => void }) {
   const done = resting && restDone(state);
   const sess = pace(state, state.day);
   const paceColor = sess.state === 'over' ? COLORS.danger : sess.state === 'behind' ? COLORS.warn : COLORS.paperDim;
+  // a finished day can't be reset (Monday clears it); an open one asks first,
+  // since the button sits where a thumb lands by accident mid-set
+  const canReset = !state.doneDays[state.day];
+  const confirmReset = () =>
+    Alert.alert(`Reset Day ${state.day}?`, 'All ticks on this day are cleared.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: onReset },
+    ]);
 
   return (
     <View style={styles.row}>
@@ -45,9 +53,11 @@ export function Header({ onReset }: { onReset: () => void }) {
             </Text>
           </Pressable>
         )}
-        <Pressable onPress={onReset} style={styles.resetBtn}>
-          <Text style={styles.resetLabel}>RESET</Text>
-        </Pressable>
+        {canReset && (
+          <Pressable onPress={confirmReset} style={styles.resetBtn}>
+            <Text style={styles.resetLabel}>RESET</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

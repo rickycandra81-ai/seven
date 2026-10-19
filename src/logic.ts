@@ -151,6 +151,29 @@ export const E1RM = (kg: number, r: number): number => (r <= 1 ? kg : Math.round
 
 // ---- which exercise the card shows ----------------------------------------
 
+// The order a day's rows are shown and worked in. Pull-up always leads and the
+// two skill holds always close; the lifts between follow the order they were
+// actually finished in last week (relearned at each Monday rollover).
+export function rowOrder(state: AppState, day: number): number[] {
+  const n = DAYS[day - 1].exs.length;
+  const o = (state.order || {})[day];
+  if (o && o.length === n && o.slice().sort((a, b) => a - b).every((v, i) => v === i)) return o;
+  return Array.from({ length: n }, (_, i) => i);
+}
+
+// where row i sits in that order (0-based), for numbering and prev/next
+export const posOf = (state: AppState, day: number, i: number): number => rowOrder(state, day).indexOf(i);
+
+export function learnOrder(state: AppState, day: number): number[] {
+  const exs = DAYS[day - 1].exs;
+  const cur = rowOrder(state, day);
+  const at = (i: number) => P(state, id(day, i)).doneAt || 0;
+  const movable = cur.filter((i) => i > 0 && exs[i].k !== 'hold');
+  const finished = movable.filter((i) => at(i)).sort((a, b) => at(a) - at(b));
+  const skipped = movable.filter((i) => !at(i)); // keep their current relative order, after the rest
+  return [0, ...finished, ...skipped, ...cur.filter((i) => exs[i].k === 'hold')];
+}
+
 // the first exercise that is started but unfinished — the one the app insists on
 export function midIdx(state: AppState, day: number): number {
   const n = DAYS[day - 1].exs.length;
@@ -172,8 +195,15 @@ export function curIdx(state: AppState): number {
   }
   const mid = midIdx(state, d);
   if (mid >= 0) return mid;
-  for (let i = 0; i < n; i++) if (!doneOf(state, d, i)) return i;
-  return 0;
+  const order = rowOrder(state, d);
+  for (const i of order) if (!doneOf(state, d, i)) return i;
+  return order[0];
+}
+
+// the row `step` places before/after row i in the day's order, clamped to the ends
+export function stepIdx(state: AppState, day: number, i: number, step: number): number {
+  const order = rowOrder(state, day);
+  return order[Math.max(0, Math.min(order.length - 1, order.indexOf(i) + step))];
 }
 
 export function clampIdx(day: number, i: number): number {
@@ -373,7 +403,8 @@ export function busyOther(state: AppState, day: number, i: number): boolean {
 // first unfinished exercise after i — the one the between-exercise rest belongs to
 export function nextPending(state: AppState, day: number, i: number): number {
   const exs = DAYS[day - 1].exs;
-  for (let j = i + 1; j < exs.length; j++) {
+  const order = rowOrder(state, day);
+  for (const j of order.slice(order.indexOf(i) + 1)) {
     if (exs[j].k === 'hold') continue;
     if ((P(state, id(day, j)).sets || 0) < setsFor(state, day, j)) return j;
   }
@@ -387,7 +418,7 @@ export function lockFocusIndex(state: AppState, day: number): number {
   const D = DAYS[day - 1];
   if (li == null || li >= D.exs.length || doneOf(state, day, li)) {
     li = -1;
-    for (let i = 0; i < D.exs.length; i++) {
+    for (const i of rowOrder(state, day)) {
       if (!doneOf(state, day, i)) {
         li = i;
         break;

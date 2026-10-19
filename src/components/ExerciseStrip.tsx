@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAYS } from '../data';
-import { doneOf, id as exId, P } from '../logic';
+import { doneOf, id as exId, P, rowOrder } from '../logic';
 import { COLORS, FONT } from '../theme';
 import { AppState } from '../types';
 
@@ -19,11 +19,13 @@ export function ExerciseStrip({
   onPick: (i: number) => void;
 }) {
   const exs = DAYS[day - 1].exs;
+  const order = rowOrder(state, day);
   const group = (j: number) => (j === 0 ? 0 : exs[j].k === 'hold' ? 2 : 1);
 
+  // chips run in the day's working order and are numbered by position
   return (
     <View style={styles.wrap}>
-      {exs.map((_, i) => {
+      {order.map((i, pos) => {
         const done = doneOf(state, day, i);
         const on = i === cur;
         const sets = P(state, exId(day, i)).sets || 0;
@@ -34,7 +36,7 @@ export function ExerciseStrip({
             onPress={() => onPick(i)}
             style={[
               styles.chip,
-              i > 0 && group(i) !== group(i - 1) && { marginLeft: 6 },
+              pos > 0 && group(i) !== group(order[pos - 1]) && { marginLeft: 6 },
               {
                 backgroundColor: on ? COLORS.accent : done ? 'transparent' : COLORS.inner,
                 borderColor: on ? COLORS.accent : part ? COLORS.accent : COLORS.borderSoft,
@@ -47,7 +49,7 @@ export function ExerciseStrip({
                 { color: on ? COLORS.accentInk : done ? COLORS.paperFainter : COLORS.paper },
               ]}
             >
-              {String(i + 1).padStart(2, '0')}
+              {String(pos + 1).padStart(2, '0')}
             </Text>
             <Text
               style={[

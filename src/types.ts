@@ -6,6 +6,7 @@ export interface ProgEntry {
   kgs?: number[]; // load logged per set, so a drop set keeps its real numbers
   secs?: number[]; // held seconds per timed set, for the skill rows
   lv?: number; // which ladder step a skill row's logged sets belong to
+  doneAt?: number; // when every set was ticked
 }
 
 export type Tab = 'today' | 'progress' | 'lock';
@@ -72,6 +73,7 @@ export interface AppState {
   pressLabel: string; // what the hold-to-undo banner says
   doneDays: Record<number, boolean>;
   weekStart: number | null; // Monday 00:00 of the week the progress belongs to, persisted
+  order: Record<number, number[]>; // day -> row indices in the order they are worked, persisted
   streak: number;
   celebrate: boolean;
   unit: WeightUnit | null; // null = follow SETTINGS.weightUnit; not persisted
@@ -110,6 +112,7 @@ export const INITIAL_STATE: AppState = {
   pressLabel: '',
   doneDays: {},
   weekStart: null,
+  order: {},
   streak: 0,
   celebrate: false,
   unit: null,

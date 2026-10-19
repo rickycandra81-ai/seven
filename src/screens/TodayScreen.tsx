@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DayPips } from '../components/DayPips';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { ExerciseStrip } from '../components/ExerciseStrip';
 import { DAYS } from '../data';
-import { countDone, curIdx, fours, heavyCount, pace, rowName } from '../logic';
+import { countDone, curIdx, fours, heavyCount, pace, rowName, rowOrder } from '../logic';
 import { useStore } from '../store';
 import { COLORS, FONT } from '../theme';
 
-const SWIPE_LOCK_PX = 8;
-const SWIPE_LOCK_RATIO = 1.3;
-const SWIPE_RELEASE_PX = 40;
-const SWIPE_CLAMP = 120;
-const SWIPE_FOLLOW = 0.6;
+const SWIPE_LOCK_PX = 10; // horizontal travel before a swipe claims the gesture
+const SWIPE_LOCK_RATIO = 1.5; // ...and it must be clearly more sideways than vertical
+const SWIPE_RELEASE_PX = 70; // a drag this far, or
+const SWIPE_RELEASE_VX = 0.5; // a flick this fast, moves to the neighbour
+const SWIPE_EDGE_DRAG = 0.25; // how much the card follows past the first/last move
 
 export function TodayScreen() {
   const { state, actions } = useStore();
@@ -21,6 +21,8 @@ export function TodayScreen() {
   const total = D.exs.length;
   const doneCount = countDone(state, day);
   const cur = curIdx(state);
+  const order = rowOrder(state, day);
+  const pos = order.indexOf(cur);
   const heavyIdxs = fours(state, day);
   const hasHeavy = heavyCount(day) > 0 && heavyIdxs.length > 0;
   const heavyNames = heavyIdxs
@@ -73,7 +75,12 @@ export function TodayScreen() {
     });
   }, [cur]);
 
-  // swipe left/right now steps between exercises, not days
+  // Swipe left/right steps between exercises. Only the card moves: it follows the
+  // finger 1:1, slides out on release, and the next one springs in from the other
+  // side. At the first/last move it drags with resistance and springs back.
+  const W = Dimensions.get('window').width;
+  const edges = useRef({ first: true, last: true }); // the responder is built once, so it reads these
+  edges.current = { first: pos <= 0, last: pos >= order.length - 1 };
   const swipeX = useRef(new Animated.Value(0)).current;
   const [swiping, setSwiping] = useState(false);
   const panResponder = useRef(
@@ -82,31 +89,63 @@ export function TodayScreen() {
         Math.abs(g.dx) > SWIPE_LOCK_PX && Math.abs(g.dx) > Math.abs(g.dy) * SWIPE_LOCK_RATIO,
       onPanResponderGrant: () => setSwiping(true),
       onPanResponderMove: (_evt, g) => {
-        swipeX.setValue(Math.max(-SWIPE_CLAMP, Math.min(SWIPE_CLAMP, g.dx)));
+        const blocked = (g.dx > 0 && edges.current.first) || (g.dx < 0 && edges.current.last);
+        swipeX.setValue(blocked ? g.dx * SWIPE_EDGE_DRAG : g.dx);
       },
       onPanResponderRelease: (_evt, g) => {
         setSwiping(false);
-        if (Math.abs(g.dx) > SWIPE_RELEASE_PX) actions.goExRel(g.dx < 0 ? 1 : -1);
-        Animated.timing(swipeX, { toValue: 0, duration: 220, useNativeDriver: true }).start();
+        const dir: 1 | -1 = g.dx < 0 ? 1 : -1;
+        const blocked = dir === 1 ? edges.current.last : edges.current.first;
+        const flung = Math.abs(g.dx) > SWIPE_RELEASE_PX || Math.abs(g.vx) > SWIPE_RELEASE_VX;
+        if (!flung || blocked) {
+          Animated.spring(swipeX, { toValue: 0, speed: 16, bounciness: 5, useNativeDriver: true }).start();
+          return;
+        }
+        Animated.timing(swipeX, {
+          toValue: -dir * W,
+          duration: 160,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }).start(() => {
+          actions.goExRel(dir);
+          swipeX.setValue(dir * W * 0.5);
+          Animated.spring(swipeX, { toValue: 0, speed: 14, bounciness: 3, useNativeDriver: true }).start();
+        });
       },
       onPanResponderTerminate: () => {
         setSwiping(false);
-        Animated.timing(swipeX, { toValue: 0, duration: 220, useNativeDriver: true }).start();
+        Animated.spring(swipeX, { toValue: 0, speed: 16, bounciness: 5, useNativeDriver: true }).start();
       },
     })
   ).current;
 
+  // The pinned strip names the move only once the card's own big title has
+  // scrolled up behind it, so the name is never on screen twice.
+  const scrollY = useRef(0);
+  const cardY = useRef(0);
+  const titleBottom = useRef(0);
+  const nameFade = useRef(new Animated.Value(0)).current;
+  const nameShown = useRef(false);
+  const checkName = () => {
+    const show = titleBottom.current > 0 && scrollY.current + stripH.current > cardY.current + titleBottom.current;
+    if (show === nameShown.current) return;
+    nameShown.current = show;
+    Animated.timing(nameFade, { toValue: show ? 1 : 0, duration: 150, useNativeDriver: true }).start();
+  };
+
   return (
-    <Animated.View
-      style={{ flex: 1, transform: [{ translateX: Animated.multiply(swipeX, SWIPE_FOLLOW) }] }}
-      {...panResponder.panHandlers}
-    >
+    <View style={{ flex: 1 }} {...panResponder.panHandlers}>
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 18 }}
         scrollEnabled={!swiping}
         stickyHeaderIndices={[4]}
+        scrollEventThrottle={16}
+        onScroll={(ev) => {
+          scrollY.current = ev.nativeEvent.contentOffset.y;
+          checkName();
+        }}
       >
         <View ref={contentRef} />
 
@@ -160,29 +199,50 @@ export function TodayScreen() {
 
         <View style={styles.strip} onLayout={(ev) => (stripH.current = ev.nativeEvent.layout.height)}>
           <ExerciseStrip state={state} day={day} cur={cur} onPick={actions.goEx} />
-          {/* the strip stays pinned while you scroll the set table, so the move's
-              name rides along with it */}
-          <Text style={styles.stripName} numberOfLines={1}>
-            {`${String(cur + 1).padStart(2, '0')} · ${rowName(state, day, cur)}`}
-          </Text>
+          {/* always takes its line (so the pinned strip never changes height while
+              scrolling); the name fades in once the card's title is out of view */}
+          <Animated.Text style={[styles.stripName, { opacity: nameFade }]} numberOfLines={1}>
+            {`${String(pos + 1).padStart(2, '0')} · ${rowName(state, day, cur)}`}
+          </Animated.Text>
         </View>
 
-        <View ref={cardRef} style={{ marginTop: 14 }}>
-          <ExerciseCard day={day} idx={cur} />
+        <View
+          ref={cardRef}
+          style={{ marginTop: 14 }}
+          onLayout={(ev) => {
+            cardY.current = ev.nativeEvent.layout.y;
+            checkName();
+          }}
+        >
+          <Animated.View
+            style={{
+              transform: [{ translateX: swipeX }],
+              opacity: swipeX.interpolate({ inputRange: [-W, 0, W], outputRange: [0.35, 1, 0.35] }),
+            }}
+          >
+            <ExerciseCard
+              day={day}
+              idx={cur}
+              onTitleBottom={(y) => {
+                titleBottom.current = y;
+                checkName();
+              }}
+            />
+          </Animated.View>
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-          {cur > 0 && (
+          {pos > 0 && (
             <Pressable onPress={() => actions.goExRel(-1)} style={styles.prevBtn}>
               <Text style={styles.prevText}>←</Text>
             </Pressable>
           )}
-          {cur < total - 1 && (
+          {pos < order.length - 1 && (
             <Pressable onPress={() => actions.goExRel(1)} style={styles.nextBtn}>
               <View style={{ minWidth: 0, gap: 4 }}>
                 <Text style={styles.nextLabel}>NEXT</Text>
                 <Text style={styles.nextName} numberOfLines={1}>
-                  {rowName(state, day, cur + 1)}
+                  {rowName(state, day, order[pos + 1])}
                 </Text>
               </View>
               <Text style={styles.nextArrow}>→</Text>
@@ -238,7 +298,7 @@ export function TodayScreen() {
           </Animated.View>
         </View>
       )}
-    </Animated.View>
+    </View>
   );
 }
 

@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { breakdownFor, cnFor, cueFor } from '../content';
 import { CANON, DAYS } from '../data';
@@ -21,9 +21,11 @@ import {
   loadKey,
   lv,
   midIdx,
+  posOf,
   ranked,
   repsVal,
   setsFor,
+  stepIdx,
   suggestion,
 } from '../logic';
 import { SK, SK_IMG } from '../skills';
@@ -35,8 +37,23 @@ import { SetRow } from './SetRow';
 
 // The whole screen is one exercise now: demo, name, cues, then either a set table
 // (lifts) or a timed-hold block with its progression ladder (skills).
-export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
+export function ExerciseCard({
+  day,
+  idx,
+  onTitleBottom,
+}: {
+  day: number;
+  idx: number;
+  onTitleBottom?: (y: number) => void; // the move's big title, bottom edge, in card coordinates
+}) {
   const { state, actions } = useStore();
+  // the title sits inside a block, so its card-relative bottom is the two layouts added up
+  const titleParts = useRef({ block: -1, name: -1 });
+  const reportTitle = (part: 'block' | 'name', v: number) => {
+    titleParts.current[part] = v;
+    const { block, name } = titleParts.current;
+    if (block >= 0 && name >= 0) onTitleBottom?.(block + name);
+  };
   const e = DAYS[day - 1].exs[idx];
   const id = exId(day, idx);
   const p = state.prog[id] || {};
@@ -95,8 +112,8 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
   // warm the demos either side so stepping between cards lands on a decoded image
   useEffect(() => {
     const exs = DAYS[day - 1].exs;
-    const around = [idx - 1, idx + 1]
-      .filter((j) => j >= 0 && j < exs.length && !exs[j].k)
+    const around = [stepIdx(state, day, idx, -1), stepIdx(state, day, idx, 1)]
+      .filter((j) => j !== idx && !exs[j].k)
       .map((j) => state.prog[exId(day, j)]?.sub || exs[j].n);
     prefetchDemos(around);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,16 +127,12 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
 
   return (
     <View style={styles.card}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <Text style={styles.pos}>
-          {`EXERCISE ${String(idx + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`}
-        </Text>
-        {!hold && !!p.sub && (
-          <View style={styles.swapTag}>
-            <Text style={styles.swapTagText}>SWAPPED</Text>
-          </View>
-        )}
-      </View>
+      {/* the strip above already numbers the move, so only a swap gets a tag here */}
+      {!hold && !!p.sub && (
+        <View style={styles.swapTag}>
+          <Text style={styles.swapTagText}>SWAPPED</Text>
+        </View>
+      )}
 
       {hold && step ? (
         // a ladder step is a bundled illustration; key it so the step swap is instant
@@ -136,8 +149,13 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
         <DemoImage name={shownName} />
       )}
 
-      <View style={{ gap: 7 }}>
-        <Text style={styles.name}>{shownName}</Text>
+      <View style={{ gap: 7 }} onLayout={(ev) => reportTitle('block', ev.nativeEvent.layout.y)}>
+        <Text
+          style={styles.name}
+          onLayout={(ev) => reportTitle('name', ev.nativeEvent.layout.y + ev.nativeEvent.layout.height)}
+        >
+          {shownName}
+        </Text>
         {!!cn && <Text style={styles.mandarin}>{`${cn[0]} · ${cn[1]}`}</Text>}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
           <Text style={[styles.groupChip, { color: GROUP_HUE[hold ? 'BALANCE' : e.g] || COLORS.paper }]}>
@@ -185,7 +203,7 @@ export function ExerciseCard({ day, idx }: { day: number; idx: number }) {
           {blockShow && (
             <Pressable onPress={() => actions.goEx(mid)} style={styles.block}>
               <Text style={styles.blockText}>
-                {`FINISH ${String(mid + 1).padStart(2, '0')} ${(
+                {`FINISH ${String(posOf(state, day, mid) + 1).padStart(2, '0')} ${(
                   state.prog[exId(day, mid)]?.sub || DAYS[day - 1].exs[mid].n
                 ).toUpperCase()} FIRST`}
               </Text>
@@ -433,8 +451,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 14,
   },
-  pos: { fontFamily: FONT.condensed700, fontSize: 11, letterSpacing: 1.8, color: COLORS.paperFaint },
-  swapTag: { backgroundColor: COLORS.paperDim, borderRadius: 5, paddingVertical: 4, paddingHorizontal: 6 },
+  swapTag: { alignSelf: 'flex-start', backgroundColor: COLORS.paperDim, borderRadius: 5, paddingVertical: 4, paddingHorizontal: 6 },
   swapTagText: { fontFamily: FONT.condensed700, fontSize: 10, letterSpacing: 1.2, color: COLORS.accentInk },
   stepImg: { width: '100%', aspectRatio: 2, borderRadius: 14, backgroundColor: '#E8DFF5' },
   name: { fontFamily: FONT.condensed700, fontSize: 30, color: COLORS.paper },

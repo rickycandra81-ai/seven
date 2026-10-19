@@ -24,8 +24,11 @@ import {
   fitLoad,
   stepLoad,
   nextFours,
+  learnOrder,
   nextOpenDay,
   nextPending,
+  rowOrder,
+  stepIdx,
   P,
   pace,
   repsVal,
@@ -99,9 +102,9 @@ export function restDone(state: AppState): boolean {
 
 // exactly what gets persisted — and what a backup file carries
 export function saveBlob(state: AppState) {
-  const { day, prog, holdBest, doneDays, weekStart, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr } =
+  const { day, prog, holdBest, doneDays, weekStart, order, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr } =
     state;
-  return { day, prog, holdBest, doneDays, weekStart, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr };
+  return { day, prog, holdBest, doneDays, weekStart, order, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr };
 }
 
 // Monday starts a clean week: every day's ticks and heavy picks clear and the
@@ -124,7 +127,9 @@ function rollWeek(s: AppState): AppState {
   if (from >= ws) return { ...s, weekStart: ws };
   let prog = s.prog;
   const fours: Record<number, number[]> = {};
+  const order: Record<number, number[]> = {};
   DAYS.forEach((_, i) => {
+    order[i + 1] = learnOrder(s, i + 1); // before the ticks (and their doneAt) clear
     prog = clearDay(prog, i + 1);
     fours[i + 1] = []; // heavy slots come back empty, to be picked by hand
   });
@@ -132,6 +137,7 @@ function rollWeek(s: AppState): AppState {
   return {
     ...s,
     weekStart: ws,
+    order,
     day: 1,
     prog,
     doneDays: {},
@@ -184,6 +190,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             rollWeek({
             ...cur,
             weekStart: s.weekStart || null,
+            order: s.order || {},
             day: s.day || 1,
             prog: s.prog || {},
             doneDays: s.doneDays || {},
@@ -357,7 +364,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-    out = { ...out, prog: { ...out.prog, [exId]: { ...(out.prog[exId] || {}), reps, kgs } } };
+    // when the move was completed — Monday learns the order you actually work in from it
+    const doneAt = next >= need ? (out.prog[exId] || {}).doneAt || Date.now() : undefined;
+    out = { ...out, prog: { ...out.prog, [exId]: { ...(out.prog[exId] || {}), reps, kgs, doneAt } } };
     if (next >= need && next > cur) {
       out = {
         ...out,
@@ -423,7 +432,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setTab: (tab) => setState((s) => ({ ...s, tab })),
       goToDay: (day) => setState((s) => ({ ...s, tab: 'today', day, open: null, altsOpen: null, curId: null })),
       swipeDay: (dir) =>
-        setState((s) => ({ ...s, curId: id(s.day, clampIdx(s.day, curIdx(s) + dir)), altsOpen: null })),
+        setState((s) => ({ ...s, curId: id(s.day, stepIdx(s, s.day, curIdx(s), dir)), altsOpen: null })),
       // jump back to the resting exercise's row, from anywhere in the app
       jumpToRest: () =>
         setState((s) => {
@@ -566,6 +575,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       resetDay: () =>
         setState((s) => {
           const d = s.day;
+          if (s.doneDays[d]) return s; // a finished day stays logged until Monday
           const prog = clearDay(s.prog, d);
           const doneDays = { ...s.doneDays };
           delete doneDays[d];
@@ -596,7 +606,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // park the card on one exercise; the strip, swipe and prev/next all land here
       goEx: (i) => setState((s) => ({ ...s, curId: id(s.day, clampIdx(s.day, i)), altsOpen: null })),
       goExRel: (d) =>
-        setState((s) => ({ ...s, curId: id(s.day, clampIdx(s.day, curIdx(s) + d)), altsOpen: null })),
+        setState((s) => ({ ...s, curId: id(s.day, stepIdx(s, s.day, curIdx(s), d)), altsOpen: null })),
       setReps: (exId, v) =>
         setState((s) => ({ ...s, repsSel: { ...s.repsSel, [exId]: clampReps(v) } })),
       // changing a ladder step mid-hold would log the seconds against the wrong move
@@ -686,11 +696,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       lockSkip: () =>
         setState((s) => {
           const day = s.day;
-          const D = DAYS[day - 1];
-          const n = D.exs.length;
+          const order = rowOrder(s, day);
+          const n = order.length;
           const li = lockFocusIndex(s, day);
+          const from = li === -1 ? 0 : order.indexOf(li);
           for (let k = 1; k <= n; k++) {
-            const j = ((li === -1 ? 0 : li) + k) % n;
+            const j = order[(from + k) % n];
             if (!doneOf(s, day, j)) return { ...s, lockIdx: j };
           }
           return s;
