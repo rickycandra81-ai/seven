@@ -9,6 +9,7 @@ import { PressBanner } from './src/components/PressBanner';
 import { Header } from './src/components/Header';
 import { TabBar } from './src/components/TabBar';
 import { DAYS } from './src/data';
+import { nextOpenDay } from './src/logic';
 import { ProgressScreen } from './src/screens/ProgressScreen';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { StoreProvider, useStore } from './src/store';
@@ -69,7 +70,7 @@ function Shell() {
       {!!state.pressingId && <PressBanner label={state.pressLabel} />}
       {!state.pressingId && !!state.toast && <PRToast toast={state.toast} />}
       {state.celebrate && (
-        <CelebrateOverlay day={state.day} total={total} onDismiss={actions.dismiss} />
+        <CelebrateOverlay day={state.day} nextDay={nextOpenDay(state, state.day)} total={total} onDismiss={actions.dismiss} />
       )}
     </View>
   );

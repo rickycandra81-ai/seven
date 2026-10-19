@@ -5,21 +5,24 @@ import { COLORS, FONT } from '../theme';
 
 export function CelebrateOverlay({
   day,
+  nextDay,
   total,
   onDismiss,
 }: {
   day: number;
+  nextDay: number | null; // the next day still open this week; null once all seven are done
   total: number;
   onDismiss: () => void;
 }) {
-  const nextDay = (day % 7) + 1;
   return (
     <Pressable onPress={onDismiss} style={styles.wrap}>
       <View style={styles.disc} />
       <Text style={styles.big}>{`DAY ${day}\nLOGGED`}</Text>
       <Text style={styles.focus}>{`${DAYS[day - 1].focus} · ${total} OF ${total}`}</Text>
       <Text style={styles.note}>
-        {`Every item ticked, holds included. Day ${nextDay} is ${DAYS[nextDay - 1].focus.toLowerCase()}.`}
+        {nextDay
+          ? `Every item ticked, holds included. Day ${nextDay} is ${DAYS[nextDay - 1].focus.toLowerCase()}.`
+          : 'Every item ticked, holds included. That is the whole week done. It starts fresh on Monday.'}
       </Text>
       <Text style={styles.hint}>TAP ANYWHERE TO CONTINUE</Text>
     </Pressable>

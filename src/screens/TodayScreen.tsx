@@ -28,7 +28,9 @@ export function TodayScreen() {
     .sort((a, b) => a - b)
     .map((i) => rowName(state, day, i))
     .join('  ·  ');
-  const finishReady = doneCount === total;
+  // a finished day stays as logged until the Monday reset; it can't be finished twice
+  const dayDone = !!state.doneDays[day];
+  const finishReady = doneCount === total && !dayDone;
 
   // every row ticked: a pulsing FINISH floats mid-screen wherever you've
   // scrolled, so the day doesn't go unlogged
@@ -190,6 +192,7 @@ export function TodayScreen() {
 
         <Pressable
           onPress={actions.finish}
+          disabled={dayDone}
           style={[
             styles.finishBtn,
             {
@@ -198,8 +201,17 @@ export function TodayScreen() {
             },
           ]}
         >
-          <Text style={[styles.finishLabel, { color: finishReady ? COLORS.accentInk : 'rgba(242,244,247,0.45)' }]}>
-            {finishReady ? `FINISH DAY ${day}` : `${total - doneCount} LEFT TO GO`}
+          <Text
+            style={[
+              styles.finishLabel,
+              { color: finishReady ? COLORS.accentInk : dayDone ? COLORS.accent : 'rgba(242,244,247,0.45)' },
+            ]}
+          >
+            {dayDone
+              ? `DAY ${day} DONE · RESETS MONDAY`
+              : finishReady
+                ? `FINISH DAY ${day}`
+                : `${total - doneCount} LEFT TO GO`}
           </Text>
         </Pressable>
       </ScrollView>

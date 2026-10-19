@@ -71,6 +71,7 @@ export interface AppState {
   pressingId: string | null; // "day-idx-set" being held down
   pressLabel: string; // what the hold-to-undo banner says
   doneDays: Record<number, boolean>;
+  weekStart: number | null; // Monday 00:00 of the week the progress belongs to, persisted
   streak: number;
   celebrate: boolean;
   unit: WeightUnit | null; // null = follow SETTINGS.weightUnit; not persisted
@@ -108,6 +109,7 @@ export const INITIAL_STATE: AppState = {
   pressingId: null,
   pressLabel: '',
   doneDays: {},
+  weekStart: null,
   streak: 0,
   celebrate: false,
   unit: null,

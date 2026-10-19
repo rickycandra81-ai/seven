@@ -24,11 +24,13 @@ import {
   fitLoad,
   stepLoad,
   nextFours,
+  nextOpenDay,
   nextPending,
   P,
   pace,
   repsVal,
   setsFor,
+  weekStartOf,
 } from './logic';
 import { SK } from './skills';
 import {
@@ -97,9 +99,57 @@ export function restDone(state: AppState): boolean {
 
 // exactly what gets persisted — and what a backup file carries
 export function saveBlob(state: AppState) {
-  const { day, prog, holdBest, doneDays, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr } =
+  const { day, prog, holdBest, doneDays, weekStart, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr } =
     state;
-  return { day, prog, holdBest, doneDays, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr };
+  return { day, prog, holdBest, doneDays, weekStart, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr };
+}
+
+// Monday starts a clean week: every day's ticks and heavy picks clear and the
+// plan goes back to Day 1. Loads, history, PRs and charts are kept. State saved
+// before this existed has no weekStart: its week is taken from the last thing
+// logged, so last week's ticks still clear but this week's are kept.
+function rollWeek(s: AppState): AppState {
+  const ws = weekStartOf(Date.now());
+  if (s.weekStart === ws) return s;
+  let from = s.weekStart;
+  if (!from) {
+    const last = Math.max(
+      0,
+      s.sessionStart || 0,
+      ...(s.hist || []).map((h) => h.t),
+      ...Object.values(s.lastLog || {}).map((l) => l.t)
+    );
+    from = last ? weekStartOf(last) : ws;
+  }
+  if (from >= ws) return { ...s, weekStart: ws };
+  let prog = s.prog;
+  const fours: Record<number, number[]> = {};
+  DAYS.forEach((_, i) => {
+    prog = clearDay(prog, i + 1);
+    fours[i + 1] = []; // heavy slots come back empty, to be picked by hand
+  });
+  if (s.restId) disarmRest();
+  return {
+    ...s,
+    weekStart: ws,
+    day: 1,
+    prog,
+    doneDays: {},
+    fours,
+    sessionStart: null,
+    open: null,
+    altsOpen: null,
+    curId: null,
+    repsSel: {},
+    restId: null,
+    restEndAt: null,
+    restExpired: false,
+    restBetween: false,
+    timerId: null,
+    timerStartAt: null,
+    elapsed: 0,
+    celebrate: false,
+  };
 }
 
 // A load typed into the field only used to land on blur, and Android keeps the
@@ -130,8 +180,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
           const s = JSON.parse(raw);
-          setState((cur) => ({
+          setState((cur) =>
+            rollWeek({
             ...cur,
+            weekStart: s.weekStart || null,
             day: s.day || 1,
             prog: s.prog || {},
             doneDays: s.doneDays || {},
@@ -145,7 +197,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             lastLog: s.lastLog || {},
             pr: s.pr || {},
             sessionStart: s.sessionStart || null,
-          }));
+          })
+          );
+        } else {
+          setState((cur) => rollWeek(cur));
         }
       } catch (e) {
         // ignore — start fresh
@@ -164,6 +219,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     state.day,
     state.prog,
     state.doneDays,
+    state.weekStart,
     state.streak,
     state.fours,
     state.loads,
@@ -215,6 +271,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       sub.remove();
     };
   }, [state.sessionStart, state.restId, state.restExpired, state.timerId]);
+
+  // the Monday rollover also has to happen when the app was left open or in the
+  // background across midnight, not only on a cold start
+  useEffect(() => {
+    if (!hydrated) return;
+    const check = () => setState((s) => rollWeek(s));
+    const iv = setInterval(check, 60000);
+    const sub = RNAppState.addEventListener('change', (next) => {
+      if (next === 'active') check();
+    });
+    return () => {
+      clearInterval(iv);
+      sub.remove();
+    };
+  }, [hydrated]);
 
   // a PR banner clears itself
   useEffect(() => {
@@ -424,13 +495,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const s2 = { ...s, prog: { ...s.prog, [exId]: { ...(s.prog[exId] || {}), sub: name === planned ? null : name } } };
           return { ...s2, altsOpen: s2.altsOpen === exId ? null : s2.altsOpen, open: exId };
         }),
-      // finishing a day records the session for the charts, then wipes the day it
-      // is about to advance into so the next cycle starts from a clean sheet.
+      // finishing a day records the session for the charts and marks the day done.
+      // Nothing is wiped here: the whole week clears on Monday (rollWeek).
       finish: () =>
         setState((s) => {
           const d = s.day;
-          if (countDone(s, d) < DAYS[d - 1].exs.length) return s;
-          const nx = (d % 7) + 1;
+          if (s.doneDays[d] || countDone(s, d) < DAYS[d - 1].exs.length) return s;
           const t = Date.now();
           let vol = 0;
           let sets = 0;
@@ -471,19 +541,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               pts: o.pts.concat([(e1 ? [t, kg, e1] : [t, kg]) as [number, number, number]]).slice(-40),
             };
           });
-          const prog = clearDay(s.prog, nx);
-          const doneDays = { ...s.doneDays, [d]: true };
-          delete doneDays[nx];
-          const fours = { ...(s.fours || {}) };
-          fours[nx] = [];
           return {
             ...s,
             celebrate: true,
             hist,
             kgHist,
-            prog,
-            doneDays,
-            fours,
+            doneDays: { ...s.doneDays, [d]: true },
             streak: s.streak + 1,
             sessionStart: null,
             repsSel: {},
@@ -496,7 +559,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           celebrate: false,
           open: null,
           altsOpen: null,
-          day: SETTINGS.autoAdvanceDay ? (s.day % 7) + 1 : s.day,
+          // a finished day is not shown again: go to the next one still open, or
+          // stay put once the whole week is done
+          day: SETTINGS.autoAdvanceDay ? nextOpenDay(s, s.day) || s.day : s.day,
         })),
       resetDay: () =>
         setState((s) => {
@@ -601,17 +666,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       restoreBackup: async () => {
         const loaded = (await readBackup()) as Partial<AppState> | null;
         if (!loaded) return;
-        setState((s) => ({
-          ...s,
-          ...loaded,
-          loads: migrateLoads(loaded.loads || {}),
-          open: null,
-          altsOpen: null,
-          timerId: null,
-          timerStartAt: null,
-          elapsed: 0,
-          toast: { name: 'Restored', line: 'FROM YOUR BACKUP FILE' },
-        }));
+        // a backup from an earlier week brings its loads and history, but its
+        // ticks belong to that week and clear like any other Monday
+        setState((s) =>
+          rollWeek({
+            ...s,
+            ...loaded,
+            loads: migrateLoads(loaded.loads || {}),
+            open: null,
+            altsOpen: null,
+            timerId: null,
+            timerStartAt: null,
+            elapsed: 0,
+            toast: { name: 'Restored', line: 'FROM YOUR BACKUP FILE' },
+          })
+        );
       },
       lockGoToDay: (day) => setState((s) => ({ ...s, day, open: null, altsOpen: null, lockIdx: null })),
       lockSkip: () =>

@@ -599,6 +599,25 @@ export function setsTotal(state: AppState): number {
 // Wiping a day keeps the exercise you swapped in: the swap lives on prog[id].sub,
 // so clearing the whole entry would send the row back to the planned move. Sets,
 // reps and logged load go; the choice of exercise stays.
+// The week runs Monday to Sunday: this is local midnight of the Monday that
+// starts the week `t` falls in.
+export function weekStartOf(t: number): number {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+}
+
+// the first day after `from` (wrapping round the week) not finished yet; null
+// once all seven are done
+export function nextOpenDay(state: AppState, from: number): number | null {
+  for (let k = 1; k <= 7; k++) {
+    const d = ((from - 1 + k) % 7) + 1;
+    if (!(state.doneDays || {})[d]) return d;
+  }
+  return null;
+}
+
 export function clearDay(prog: AppState['prog'], day: number): AppState['prog'] {
   const out = { ...prog };
   for (let i = 0; i < DAYS[day - 1].exs.length; i++) {
