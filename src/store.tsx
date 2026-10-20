@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { AppState as RNAppState } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { breakdownFor } from './content';
-import { CANON, DAYS } from './data';
+import { CANON, DAYS, isPerSide } from './data';
 import {
   autoHeavy,
   busyOther,
@@ -33,6 +33,7 @@ import {
   pace,
   repsVal,
   setsFor,
+  viewOnly,
   weekStartOf,
 } from './logic';
 import { SK } from './skills';
@@ -444,7 +445,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       toggleAlts: (exId) => setState((s) => ({ ...s, altsOpen: s.altsOpen === exId ? null : exId })),
       setHeavy: (day, i, want) =>
         setState((s) => {
-          if (autoHeavy(day)) return s;
+          if (autoHeavy(day) || viewOnly(s, day)) return s;
           const s2: AppState = { ...s, fours: { ...(s.fours || {}), [day]: nextFours(s, day, i, want) } };
           if (want) return s2;
           // giving up the heavy slot drops the need to 3 — a logged 4th set would
@@ -463,6 +464,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const cur = P(s, exId).sets || 0;
           if (j !== cur) return s;
           const [d0, i0] = exId.split('-').map(Number);
+          if (viewOnly(s, d0)) return s;
           if (cur === 0 && busyOther(s, d0, i0)) return s;
           if (s.restId === exId && !restDone(s)) return s;
           return commitSet(s, exId, j + 1, cur);
@@ -473,6 +475,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const s = commitTyped(s0);
           const cur = P(s, exId).sets || 0;
           const [d0, i0] = exId.split('-').map(Number);
+          if (viewOnly(s, d0)) return { ...s, pressingId: null };
           if (cur === 0 && busyOther(s, d0, i0)) return { ...s, pressingId: null };
           return { ...commitSet(s, exId, j < cur ? j : j + 1, cur), pressingId: null };
         });
@@ -500,7 +503,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // once a set is logged the planned move is locked in — no more swapping
       pick: (exId, planned, name) =>
         setState((s) => {
-          if ((P(s, exId).sets || 0) > 0) return s;
+          if ((P(s, exId).sets || 0) > 0 || viewOnly(s, +exId.split('-')[0])) return s;
           const s2 = { ...s, prog: { ...s.prog, [exId]: { ...(s.prog[exId] || {}), sub: name === planned ? null : name } } };
           return { ...s2, altsOpen: s2.altsOpen === exId ? null : s2.altsOpen, open: exId };
         }),
@@ -522,9 +525,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const k = p.sets || 0;
             const rs = (p.reps || []).slice(0, k);
             const ks = p.kgs || [];
-            // volume is the real per-set load x reps, falling back to the row's load
+            // volume is the real per-set load x reps, falling back to the row's load;
+            // a per-side machine moves its logged load on both arms
             let v = 0;
             for (let j = 0; j < k; j++) v += (ks[j] != null ? ks[j] : kg) * (rs[j] != null ? rs[j] : 1);
+            if (isPerSide(n)) v *= 2;
             const top = Math.max(kg, ...ks.slice(0, k).filter((x) => x != null));
             let e1 = 0;
             for (let j = 0; j < k; j++) {
@@ -619,7 +624,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const day = +dayStr;
           const i = +iStr;
           const e = DAYS[day - 1].exs[i];
-          if (!e.k || !e.L) return s;
+          if (!e.k || !e.L || viewOnly(s, day)) return s;
           const p = P(s, exId);
           const cur = p.sets || 0;
           const need = setsFor(s, day, i);

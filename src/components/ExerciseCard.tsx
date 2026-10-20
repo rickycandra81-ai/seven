@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import React, { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { breakdownFor, cnFor, cueFor } from '../content';
-import { CANON, DAYS } from '../data';
+import { CANON, DAYS, isPerSide } from '../data';
 import { DemoImage, prefetchDemos } from './DemoImage';
 import {
   autoHeavy,
@@ -22,6 +22,7 @@ import {
   lv,
   midIdx,
   posOf,
+  viewOnly,
   ranked,
   repsVal,
   setsFor,
@@ -84,10 +85,12 @@ export function ExerciseCard({
   const typed = parseFloat(loadText);
   const upcomingKg = lk in state.loadText && !isNaN(typed) && typed >= 0 ? fitLoad(shownName, unit === 'kg' ? typed : typed / 2.20462) : loadKg;
 
-  const canHeavy = eligibleHeavy(day, idx) && !autoHeavy(day);
+  // another day is mid-way, or this one is finished: the card can be read, not worked
+  const locked = viewOnly(state, day);
+  const canHeavy = eligibleHeavy(day, idx) && !autoHeavy(day) && !locked;
   const heavy = need === 4;
   const heavyBlocked = isHeavyBlocked(state, day, idx);
-  const hasAlts = !fixed && sets === 0;
+  const hasAlts = !fixed && sets === 0 && !locked;
   const altsOpen = state.altsOpen === id;
   const lockedOut = sets === 0 && busyOther(state, day, idx);
   const restActive = state.restId === id;
@@ -123,7 +126,7 @@ export function ExerciseCard({
   const best = step ? state.holdBest[step[0]] || 0 : 0;
   const levelUp = canLevelUp(state, day, idx);
   const nextStep = skill && lvI < skill.steps.length - 1 ? skill.steps[lvI + 1][0] : '';
-  const isoDisabled = !running && (done || lockedOut || resting || !!state.timerId);
+  const isoDisabled = !running && (done || lockedOut || resting || !!state.timerId || !!locked);
 
   return (
     <View style={styles.card}>
@@ -175,7 +178,13 @@ export function ExerciseCard({
         {step ? `${step[2]} Roll the wrists for a minute first.` : cueFor(shownName, e.g)}
       </Text>
 
-      {levelUp && (
+      {!!locked && (
+        <View style={styles.lockBanner}>
+          <Text style={styles.lockText}>{`VIEW ONLY · ${locked}`}</Text>
+        </View>
+      )}
+
+      {levelUp && !locked && (
         <Pressable onPress={() => actions.setLevel(L as string, lvI + 1)} style={styles.levelUp}>
           <Text style={styles.levelUpText}>{`MOVE UP → ${nextStep.toUpperCase()}`}</Text>
         </Pressable>
@@ -191,7 +200,7 @@ export function ExerciseCard({
             </View>
           )}
 
-          {sug.show && (
+          {sug.show && !locked && (
             <Pressable onPress={() => actions.applySuggest(shownName, sug.kg)} style={styles.suggest}>
               <Text style={styles.suggestText}>
                 {`ALL SETS HIT ${SETTINGS.repTarget} REPS LAST TIME · TRY ${conv(sug.kg)} ${unit.toUpperCase()}`}
@@ -200,7 +209,7 @@ export function ExerciseCard({
             </Pressable>
           )}
 
-          {blockShow && (
+          {blockShow && !locked && (
             <Pressable onPress={() => actions.goEx(mid)} style={styles.block}>
               <Text style={styles.blockText}>
                 {`FINISH ${String(posOf(state, day, mid) + 1).padStart(2, '0')} ${(
@@ -219,6 +228,7 @@ export function ExerciseCard({
                 <Pressable onPress={actions.toggleUnit} style={styles.unitChip}>
                   <Text style={styles.unitChipText}>{unit.toUpperCase()}</Text>
                 </Pressable>
+                {isPerSide(shownName) && <Text style={[styles.headLabel, { color: COLORS.load }]}>/ SIDE</Text>}
               </View>
               <Text style={[styles.headLabel, { color: COLORS.accent, flex: 1, textAlign: 'center' }]}>REPS</Text>
               <View style={{ width: 42 }} />
@@ -226,7 +236,7 @@ export function ExerciseCard({
 
             {Array.from({ length: need }, (_, j) => {
               const logged = j < sets;
-              const now = j === sets && !done;
+              const now = j === sets && !done && !locked;
               const kv = logged && (p.kgs || [])[j] != null ? (p.kgs as number[])[j] : upcomingKg;
               return (
                 <SetRow
@@ -451,6 +461,8 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 14,
   },
+  lockBanner: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: COLORS.hairline, backgroundColor: COLORS.inner },
+  lockText: { fontFamily: FONT.condensed700, fontSize: 12, letterSpacing: 1.4, color: COLORS.paperDim, textAlign: 'center' },
   swapTag: { alignSelf: 'flex-start', backgroundColor: COLORS.paperDim, borderRadius: 5, paddingVertical: 4, paddingHorizontal: 6 },
   swapTagText: { fontFamily: FONT.condensed700, fontSize: 10, letterSpacing: 1.2, color: COLORS.accentInk },
   stepImg: { width: '100%', aspectRatio: 2, borderRadius: 14, backgroundColor: '#E8DFF5' },

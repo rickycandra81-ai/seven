@@ -4,7 +4,7 @@ import { DayPips } from '../components/DayPips';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { ExerciseStrip } from '../components/ExerciseStrip';
 import { DAYS } from '../data';
-import { countDone, curIdx, fours, heavyCount, pace, rowName, rowOrder } from '../logic';
+import { countDone, curIdx, fours, heavyCount, pace, rowName, rowOrder, viewOnly } from '../logic';
 import { useStore } from '../store';
 import { COLORS, FONT } from '../theme';
 
@@ -33,6 +33,7 @@ export function TodayScreen() {
   // a finished day stays as logged until the Monday reset; it can't be finished twice
   const dayDone = !!state.doneDays[day];
   const finishReady = doneCount === total && !dayDone;
+  const locked = viewOnly(state, day); // finished, or another day is mid-way: look, don't log
 
   // every row ticked: a pulsing FINISH floats mid-screen wherever you've
   // scrolled, so the day doesn't go unlogged
@@ -252,7 +253,7 @@ export function TodayScreen() {
 
         <Pressable
           onPress={actions.finish}
-          disabled={dayDone}
+          disabled={!!locked}
           style={[
             styles.finishBtn,
             {
@@ -269,7 +270,9 @@ export function TodayScreen() {
           >
             {dayDone
               ? `DAY ${day} DONE · RESETS MONDAY`
-              : finishReady
+              : locked
+                ? `VIEW ONLY · ${locked}`
+                : finishReady
                 ? `FINISH DAY ${day}`
                 : `${total - doneCount} LEFT TO GO`}
           </Text>

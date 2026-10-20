@@ -639,6 +639,18 @@ export function weekStartOf(t: number): number {
   return d.getTime();
 }
 
+// One day is worked at a time. A day is only for looking at when it is already
+// finished, or while another day has sets logged and is not finished yet.
+// Returns why (for the banner), or '' when the day can be worked.
+export function viewOnly(state: AppState, day: number): string {
+  if ((state.doneDays || {})[day]) return `DAY ${day} DONE`;
+  for (let d = 1; d <= 7; d++) {
+    if (d === day || (state.doneDays || {})[d]) continue;
+    if (DAYS[d - 1].exs.some((_, i) => (P(state, id(d, i)).sets || 0) > 0)) return `DAY ${d} IN PROGRESS`;
+  }
+  return '';
+}
+
 // the first day after `from` (wrapping round the week) not finished yet; null
 // once all seven are done
 export function nextOpenDay(state: AppState, from: number): number | null {

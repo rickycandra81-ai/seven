@@ -57,7 +57,7 @@ export const LIB: Record<string, LibEntry> = {
   'Arnold press': { g: 'SHOULDER', kg: 14, p: 80, a: [['Seated dumbbell press', 78], ['Standing dumbbell press', 77], ['Machine shoulder press', 76], ['Cable shoulder press', 74], ['Landmine press', 68]] },
   'Front raise': { g: 'SHOULDER', kg: 8, p: 80, a: [['Cable front raise', 82], ['Plate front raise', 76], ['Landmine raise', 74], ['Incline bench front raise', 72], ['Band front raise', 70]] },
   'Rear delt fly': { g: 'SHOULDER', kg: 8, p: 85, a: [['Reverse pec deck', 88], ['Cable reverse fly', 86], ['Bent-over dumbbell fly', 84], ['Face pull', 66], ['Band pull-apart', 62]] },
-  'Lat pulldown': { g: 'BACK', kg: 55, p: 85, a: [['Chin-up', 84], ['Neutral-grip pulldown', 84], ['Single-arm pulldown', 82], ['Assisted pull-up', 80], ['Machine pullover', 74], ['Band pulldown', 62]] },
+  'Lat pulldown': { g: 'BACK', kg: 55, p: 85, a: [['Plate-loaded pulldown', 85], ['Chin-up', 84], ['Neutral-grip pulldown', 84], ['Single-arm pulldown', 82], ['Assisted pull-up', 80], ['Machine pullover', 74], ['Band pulldown', 62]] },
   'Barbell row': { g: 'BACK', kg: 50, p: 80, a: [['Chest-supported row', 85], ['Seal row', 84], ['Dumbbell row', 82], ['T-bar row', 80], ['Landmine row', 79], ['Smith machine row', 78]] },
   'Seated cable row': { g: 'BACK', kg: 45, p: 80, a: [['Chest-supported machine row', 84], ['Dumbbell row', 82], ['Single-arm cable row', 81], ['Wide-grip cable row', 78], ['Inverted row', 72]] },
   'Face pull': { g: 'SHOULDER', kg: 20, p: 70, a: [['Reverse pec deck', 74], ['Cable reverse fly', 72], ['Bent-over dumbbell fly', 70], ['Rope upright row', 66], ['Band pull-apart', 64]] },
@@ -88,6 +88,9 @@ export const MAX_KG: Record<string, number> = {
 const FREE = /barbell|dumbbell|dumbell|ez-bar|bench press|front squat|back squat|goblet|bulgarian|deadlift|rdl|good morning|hip thrust|t-bar|seal row|landmine|plate|kettlebell|skull crusher|kickback|overhead press|push press|arnold|lateral raise|front raise|hammer curl|zottman|reverse curl|preacher|weighted|floor press|lunge|step-up|dip/i;
 const MACHINE = /machine|smith|cable|rope/i;
 export const isFreeWeight = (name: string): boolean => FREE.test(name) && !MACHINE.test(name);
+
+// plate-loaded machines with a separate arm each side: the load logged is what is on ONE side
+export const isPerSide = (name: string): boolean => /plate-loaded|iso-lateral/i.test(name);
 
 // movement pattern per planned move — extras only join a list of the same pattern
 export const PAT: Record<string, string> = {
