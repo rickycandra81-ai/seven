@@ -11,6 +11,7 @@ export interface SetRowProps {
   reps: number;
   loadText: string; // what the input shows while being typed
   blocked: boolean; // waiting on a rest, or another exercise is mid-way
+  readOnly?: boolean; // the day is finished or another day is mid-way: no tap, no hold-to-undo
   resting: boolean;
   onLoadText: (v: string) => void;
   onLoadBlur: () => void;
@@ -121,6 +122,7 @@ export function SetRow(p: SetRowProps) {
       )}
 
       <Pressable
+        disabled={p.readOnly}
         onPressIn={start}
         onPressOut={end}
         style={[

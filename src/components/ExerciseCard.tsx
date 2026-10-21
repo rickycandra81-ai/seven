@@ -247,6 +247,7 @@ export function ExerciseCard({
                   reps={logged ? ((p.reps || [])[j] != null ? (p.reps as number[])[j] : 0) : reps}
                   loadText={loadText}
                   blocked={lockedOut || resting}
+                  readOnly={!!locked}
                   resting={resting}
                   onLoadText={(v) => actions.onLoadText(lk, v)}
                   onLoadBlur={() => actions.onLoadBlur(shownName, loadText)}
@@ -262,8 +263,8 @@ export function ExerciseCard({
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <Text style={styles.hint}>TAP ✓ TO LOG · HOLD A LOGGED ✓ TO UNDO</Text>
-            {showAdjust && (
+            {!locked && <Text style={styles.hint}>TAP ✓ TO LOG · HOLD A LOGGED ✓ TO UNDO</Text>}
+            {showAdjust && !locked && (
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 <Pressable
                   onPress={() => actions.bumpLoad(shownName, -1)}

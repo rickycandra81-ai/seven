@@ -292,11 +292,19 @@ export function suggestion(state: AppState, canon: string, need: number, loadKg:
 
 const conv = (kg: number, unit: 'kg' | 'lb') => (unit === 'kg' ? kg : Math.round(kg * 2.20462 * 10) / 10);
 
+// when a set was done, down to the clock time: a morning session and an evening
+// one are not the same effort, so LAST and BEST both say which it was
+function whenLabel(t: number): string {
+  const d = new Date(t);
+  const clock = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(t).setHours(0, 0, 0, 0)) / 86400000);
+  return (days <= 0 ? 'TODAY' : days === 1 ? 'YESTERDAY' : days + ' DAYS AGO') + ' ' + clock;
+}
+
 export function lastLine(state: AppState, canon: string, unit: 'kg' | 'lb'): string {
   const last = state.lastLog[canon];
   if (!last) return '';
   const U = unit.toUpperCase();
-  const ago = Math.floor((Date.now() - last.t) / 86400000);
   const bits: string[] = [];
   if (last.kgs && last.kgs.length && last.reps) {
     // per-set shape: "40×15 · 40×12 · 35×12 KG"
@@ -308,7 +316,7 @@ export function lastLine(state: AppState, canon: string, unit: 'kg' | 'lb'): str
     if (last.kg) bits.push(conv(last.kg, unit) + ' ' + U);
     if (last.reps && last.reps.length) bits.push('× ' + last.reps.join(' · '));
   }
-  return 'LAST  ' + bits.join(' ') + '  ·  ' + (ago === 0 ? 'TODAY' : ago === 1 ? 'YESTERDAY' : ago + ' DAYS AGO');
+  return 'LAST  ' + bits.join(' ') + '  ·  ' + whenLabel(last.t);
 }
 
 // the heaviest set ever logged for the move, so a deliberately lighter day (legs
@@ -316,9 +324,8 @@ export function lastLine(state: AppState, canon: string, unit: 'kg' | 'lb'): str
 export function bestLine(state: AppState, canon: string, unit: 'kg' | 'lb'): string {
   const pr = state.pr[canon];
   if (!pr) return '';
-  const ago = Math.floor((Date.now() - pr.t) / 86400000);
   const set = pr.kg ? conv(pr.kg, unit) + ' ' + unit.toUpperCase() + ' × ' + pr.reps : pr.reps + ' REPS';
-  return 'BEST  ' + set + '  ·  ' + (ago === 0 ? 'TODAY' : ago === 1 ? 'YESTERDAY' : ago + ' DAYS AGO');
+  return 'BEST  ' + set + '  ·  ' + whenLabel(pr.t);
 }
 
 // best estimated 1RM from last session, plus what the set about to be logged
