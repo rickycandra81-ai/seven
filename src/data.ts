@@ -89,8 +89,13 @@ const FREE = /barbell|dumbbell|dumbell|ez-bar|bench press|front squat|back squat
 const MACHINE = /machine|smith|cable|rope/i;
 export const isFreeWeight = (name: string): boolean => FREE.test(name) && !MACHINE.test(name);
 
-// plate-loaded machines with a separate arm each side: the load logged is what is on ONE side
-export const isPerSide = (name: string): boolean => /plate-loaded|iso-lateral/i.test(name);
+// Loads the user logs for ONE side only: plates on a barbell (the bar itself is
+// not counted) and plate-loaded machines with an arm each side. Volume doubles
+// them. Dumbbells stay per dumbbell; landmine / T-bar carry plates on one end only.
+const BARBELL = /barbell|ez-bar|bench press|front squat|back squat|deadlift|rdl|good morning|hip thrust|seal row|skull crusher|overhead press|push press|floor press|preacher|reverse curl/i;
+export const isPerSide = (name: string): boolean =>
+  /plate-loaded|iso-lateral/i.test(name) ||
+  (BARBELL.test(name) && !/dumbbell|dumbell|single-leg|landmine|t-bar|machine|smith|cable/i.test(name));
 
 // movement pattern per planned move — extras only join a list of the same pattern
 export const PAT: Record<string, string> = {
