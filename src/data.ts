@@ -87,14 +87,16 @@ export const MAX_KG: Record<string, number> = {
 // dumbbells by 1 kg), so they are not held to the machines' 5 kg pin steps.
 const FREE = /barbell|dumbbell|dumbell|ez-bar|bench press|front squat|back squat|goblet|bulgarian|deadlift|rdl|good morning|hip thrust|t-bar|seal row|landmine|plate|kettlebell|skull crusher|kickback|overhead press|push press|arnold|lateral raise|front raise|hammer curl|zottman|reverse curl|preacher|weighted|floor press|lunge|step-up|dip/i;
 const MACHINE = /machine|smith|cable|rope/i;
-export const isFreeWeight = (name: string): boolean => FREE.test(name) && !MACHINE.test(name);
+// plates per side (isPerSide, below) step like free weights too, not by pin
+export const isFreeWeight = (name: string): boolean => (FREE.test(name) && !MACHINE.test(name)) || isPerSide(name);
 
 // Loads the user logs for ONE side only: plates on a barbell (the bar itself is
-// not counted) and plate-loaded machines with an arm each side. Volume doubles
-// them. Dumbbells stay per dumbbell; landmine / T-bar carry plates on one end only.
+// not counted) and plate-loaded machines loaded left and right (hack squat, and
+// the calf raises the user does on it). Volume doubles them. Dumbbells stay per
+// dumbbell; landmine / T-bar carry plates on one end only.
 const BARBELL = /barbell|ez-bar|bench press|front squat|back squat|deadlift|rdl|good morning|hip thrust|seal row|skull crusher|overhead press|push press|floor press|preacher|reverse curl/i;
 export const isPerSide = (name: string): boolean =>
-  /plate-loaded|iso-lateral/i.test(name) ||
+  /plate-loaded|iso-lateral|hack squat|^calves raises$/i.test(name) ||
   (BARBELL.test(name) && !/dumbbell|dumbell|single-leg|landmine|t-bar|machine|smith|cable/i.test(name));
 
 // movement pattern per planned move — extras only join a list of the same pattern

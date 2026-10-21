@@ -104,7 +104,7 @@ const HOWTO: Record<string, string> = {
   'Band push-up': 'Band across your back, standard push-up form against the extra resistance.',
   'Abductor': 'Seated, push your knees outward against the pads, control the return.',
   'Adductor': 'Seated, squeeze your knees together against the pads, control the return.',
-  'Calves raises': 'Rise onto your toes as high as possible, pause, lower with control past level.',
+  'Calves raises': 'On the hack squat: balls of your feet on the low edge of the plate, rise as high as you can, lower into a full stretch.',
   'Standing calf raise': 'Rise onto your toes, pause at the top, lower slowly below the platform.',
   'Dumbbell single-leg calf raise': 'Dumbbell in one hand, ball of the other foot on a step, rise high, lower below the step.',
   'Hack squat single-leg calf raise': 'One foot on the low edge of the hack squat plate, shoulders under the pads, full stretch then rise.',
