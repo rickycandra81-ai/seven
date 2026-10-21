@@ -91,12 +91,13 @@ const MACHINE = /machine|smith|cable|rope/i;
 export const isFreeWeight = (name: string): boolean => (FREE.test(name) && !MACHINE.test(name)) || isPerSide(name);
 
 // Loads the user logs for ONE side only: plates on a barbell (the bar itself is
-// not counted) and plate-loaded machines loaded left and right (hack squat, and
-// the calf raises the user does on it). Volume doubles them. Dumbbells stay per
-// dumbbell; landmine / T-bar carry plates on one end only.
+// not counted) and the machines in the user's gym loaded with plates left and right
+// (confirmed one by one). Volume doubles them. Dumbbells stay per dumbbell;
+// landmine carries plates on one end only; pin and cable stacks are a total.
+const PLATE_LOADED = /plate-loaded|iso-lateral|hack squat|^calves raises$|leg press|smith|^seated calf raise$|^(machine )?chest press$|^(machine )?shoulder press$|^incline machine press$|chest-supported|t-bar row/i;
 const BARBELL = /barbell|ez-bar|bench press|front squat|back squat|deadlift|rdl|good morning|hip thrust|seal row|skull crusher|overhead press|push press|floor press|preacher|reverse curl/i;
 export const isPerSide = (name: string): boolean =>
-  /plate-loaded|iso-lateral|hack squat|^calves raises$/i.test(name) ||
+  PLATE_LOADED.test(name) ||
   (BARBELL.test(name) && !/dumbbell|dumbell|single-leg|landmine|t-bar|machine|smith|cable/i.test(name));
 
 // movement pattern per planned move — extras only join a list of the same pattern
