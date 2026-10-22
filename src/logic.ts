@@ -113,19 +113,24 @@ export interface RankedRow {
 
 // ranked list: the planned move plus every free alternative from its
 // training-type pool, highest emphasis first.
-export function ranked(state: AppState, day: number, idx: number, name: string): RankedRow[] {
-  const k = LIB[name].g;
+// the moves the day's OTHER rows are actually doing (canonical names). A slot
+// only reserves the move it is doing — swap a move out and it returns to the pool.
+export function takenElsewhere(state: AppState, day: number, idx: number): Record<string, 1> {
   const taken: Record<string, 1> = {};
   DAYS[day - 1].exs.forEach((x, j) => {
     if (j === idx || x.k === 'hold') return;
-    // a slot only reserves the move it is ACTUALLY doing — swap a move out and
-    // it returns to the pool for every other slot in that group.
-    const sub = P(state, id(day, j)).sub;
-    taken[CANON(sub || x.n)] = 1;
+    taken[CANON(P(state, id(day, j)).sub || x.n)] = 1;
   });
+  return taken;
+}
+
+export function ranked(state: AppState, day: number, idx: number, name: string): RankedRow[] {
+  const k = LIB[name].g;
+  const taken = takenElsewhere(state, day, idx);
   const cur = CANON(name);
   const pool = POOL[k] || {};
-  const rows: RankedRow[] = [{ n: name, p: LIB[name].p, base: true }];
+  // the planned move is offered back too, unless another row is doing it now
+  const rows: RankedRow[] = taken[cur] ? [] : [{ n: name, p: LIB[name].p, base: true }];
   Object.keys(pool).forEach((n) => {
     if (n === cur || taken[n]) return;
     rows.push({ n, p: pool[n] });
@@ -150,6 +155,40 @@ export function countDone(state: AppState, day: number): number {
 export const E1RM = (kg: number, r: number): number => (r <= 1 ? kg : Math.round(kg * (1 + r / 30)));
 
 // ---- which exercise the card shows ----------------------------------------
+
+// No move may run on two rows of one day. Saves from before that rule could hold
+// a pair (a move swapped onto a row while its own row had been swapped away,
+// then swapped back). A row with nothing logged gives way: it takes over the
+// other row's planned move when that is free (the two simply trade places), else
+// the best free alternative working the same main muscle. Logged sets are never
+// touched.
+export function dedupeProg(state: AppState): AppState['prog'] {
+  let s = state;
+  DAYS.forEach((D, di) => {
+    const day = di + 1;
+    const eff = (i: number) => CANON(P(s, id(day, i)).sub || D.exs[i].n);
+    D.exs.forEach((ei, i) => {
+      if (ei.k) return;
+      const j = D.exs.findIndex((ej, k) => k !== i && !ej.k && eff(k) === eff(i));
+      if (j < 0) return;
+      // the row that moves: one with no sets, preferring a swapped one
+      const movable = [i, j].filter((k) => !(P(s, id(day, k)).sets || 0));
+      if (!movable.length) return;
+      const k = movable.find((m) => P(s, id(day, m)).sub) ?? movable[0];
+      const other = k === i ? j : i;
+      const opts = ranked(s, day, k, D.exs[k].n);
+      const muscle = (n: string) => breakdownFor(n, D.exs[k].g)[0][0];
+      const pick =
+        opts.find((r) => CANON(r.n) === CANON(D.exs[other].n)) ??
+        opts.find((r) => muscle(r.n) === muscle(D.exs[k].n)) ??
+        opts[0];
+      if (!pick) return;
+      const sub = pick.base ? null : pick.n;
+      s = { ...s, prog: { ...s.prog, [id(day, k)]: { ...P(s, id(day, k)), sub } } };
+    });
+  });
+  return s.prog;
+}
 
 // The order a day's rows are shown and worked in. Pull-up always leads and the
 // two skill holds always close; the lifts between follow the order they were

@@ -33,6 +33,8 @@ import {
   pace,
   repsVal,
   setsFor,
+  dedupeProg,
+  takenElsewhere,
   viewOnly,
   weekStartOf,
 } from './logic';
@@ -106,6 +108,12 @@ export function saveBlob(state: AppState) {
   const { day, prog, holdBest, doneDays, weekStart, order, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr } =
     state;
   return { day, prog, holdBest, doneDays, weekStart, order, streak, fours, loads, hist, kgHist, skillLv, sessionStart, lastLog, pr };
+}
+
+// loaded data (save or backup) may carry a move on two rows of a day: untangle it
+function tidy(s: AppState): AppState {
+  const prog = dedupeProg(s);
+  return prog === s.prog ? s : { ...s, prog };
 }
 
 // Monday starts a clean week: every day's ticks and heavy picks clear and the
@@ -188,7 +196,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (raw) {
           const s = JSON.parse(raw);
           setState((cur) =>
-            rollWeek({
+            tidy(rollWeek({
             ...cur,
             weekStart: s.weekStart || null,
             order: s.order || {},
@@ -205,7 +213,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             lastLog: s.lastLog || {},
             pr: s.pr || {},
             sessionStart: s.sessionStart || null,
-          })
+          }))
           );
         } else {
           setState((cur) => rollWeek(cur));
@@ -503,7 +511,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // once a set is logged the planned move is locked in — no more swapping
       pick: (exId, planned, name) =>
         setState((s) => {
-          if ((P(s, exId).sets || 0) > 0 || viewOnly(s, +exId.split('-')[0])) return s;
+          const [pd, pi] = exId.split('-').map(Number);
+          if ((P(s, exId).sets || 0) > 0 || viewOnly(s, pd)) return s;
+          // a move another row of the day is already doing can't be picked twice
+          if (takenElsewhere(s, pd, pi)[CANON(name)]) return s;
           const s2 = { ...s, prog: { ...s.prog, [exId]: { ...(s.prog[exId] || {}), sub: name === planned ? null : name } } };
           return { ...s2, altsOpen: s2.altsOpen === exId ? null : s2.altsOpen, open: exId };
         }),
@@ -684,7 +695,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // a backup from an earlier week brings its loads and history, but its
         // ticks belong to that week and clear like any other Monday
         setState((s) =>
-          rollWeek({
+          tidy(rollWeek({
             ...s,
             ...loaded,
             loads: migrateLoads(loaded.loads || {}),
@@ -694,7 +705,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             timerStartAt: null,
             elapsed: 0,
             toast: { name: 'Restored', line: 'FROM YOUR BACKUP FILE' },
-          })
+          }))
         );
       },
       lockGoToDay: (day) => setState((s) => ({ ...s, day, open: null, altsOpen: null, lockIdx: null })),
