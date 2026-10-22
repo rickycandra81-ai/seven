@@ -125,7 +125,7 @@ const HOWTO: Record<string, string> = {
   'Pistol squat': 'Single-leg squat, other leg extended forward, sit back and down keeping your heel planted.',
   'Bulgarian split squat': 'Rear foot elevated behind you, lower the front knee, drive up through the front heel.',
   'Box pistol squat': 'Single-leg squat down to a box for depth control, stand back up.',
-  'Assisted pistol squat': 'Hold a support for balance, single-leg squat down and back up.',
+  'Assisted pistol squat': 'Hold a light plate out in front as a counterweight (or a post for balance), sit down on one leg, stand back up.',
   'Walking lunge': 'Step forward, lower the rear knee toward the floor, push off into the next step.',
   'Step-up': 'Step fully onto a box with one foot, drive up without pushing off the trailing leg.',
   'Leg curl': 'Curl your heels toward your glutes, pause, lower with control against the pad.',

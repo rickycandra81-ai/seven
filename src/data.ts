@@ -146,7 +146,10 @@ export const ALIAS: Record<string, string> = {
   'Pistol squat': 'Pistol Squat', 'Tricep rope pushdown': 'Triceps',
   'Tricep dip': 'Triceps', 'Biceps': 'Cable curl',
   'Tricep': 'Triceps',
-  'Bodyweight dip': 'Weighted dip', 'Rope pushdown': 'Tricep rope pushdown',
+  // one move under two names: folded so it can't show up twice in a day
+  'Bodyweight dip': 'Chest dip', 'Rope pushdown': 'Triceps',
+  'Dumbbell bench press': 'Dumbell Bench press', 'Incline barbell press': 'Incline bench press',
+  'Rope hammer curl': 'Cable hammer curl',
   'Leg curl': 'Seated leg curl',
   'Single-leg calf raise': 'Dumbbell single-leg calf raise',
   'Pec deck': 'Butterfly',
