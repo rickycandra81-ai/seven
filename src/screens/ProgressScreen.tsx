@@ -174,7 +174,16 @@ export function ProgressScreen() {
         {body.missing.length > 0 && (
           <View style={styles.missBox}>
             <Text style={styles.missLabel}>NOT TRAINED THIS WEEK</Text>
-            <Text style={styles.missList}>{body.missing.join(' · ').toUpperCase()}</Text>
+            {/* each one says where it is and what trains it best */}
+            {body.missingTips.map((t) => (
+              <View key={t.muscle} style={{ marginTop: 8 }}>
+                <Text style={styles.missList}>
+                  {t.muscle.toUpperCase()}
+                  {!!t.area && <Text style={styles.missArea}>{`  ·  ${t.area.toUpperCase()}`}</Text>}
+                </Text>
+                {t.moves.length > 0 && <Text style={styles.missMoves}>{`TRY  ${t.moves.join('  ·  ')}`}</Text>}
+              </View>
+            ))}
           </View>
         )}
       </Card>
@@ -302,7 +311,9 @@ const styles = StyleSheet.create({
   topValue: { fontFamily: FONT.condensed700, fontSize: 12, letterSpacing: 1.1, color: COLORS.paperDim },
   missBox: { marginTop: 14, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 12, backgroundColor: COLORS.inner },
   missLabel: { fontFamily: FONT.condensed700, fontSize: 10, letterSpacing: 1.4, color: COLORS.warn },
-  missList: { fontFamily: FONT.condensed600, fontSize: 12, lineHeight: 18, letterSpacing: 0.7, color: COLORS.paperDim, marginTop: 6 },
+  missList: { fontFamily: FONT.condensed600, fontSize: 12, lineHeight: 18, letterSpacing: 0.7, color: COLORS.paper },
+  missArea: { color: COLORS.paperFaint },
+  missMoves: { fontFamily: FONT.body400, fontSize: 13, lineHeight: 19, color: COLORS.paperDim, marginTop: 2 },
   cycleNum: { fontFamily: FONT.condensed700, fontSize: 12, color: COLORS.paperDim },
   holdName: { fontFamily: FONT.body500, fontSize: 16, color: COLORS.paper },
   holdBest: { fontFamily: FONT.condensed800, fontSize: 22, color: COLORS.accent },

@@ -617,6 +617,39 @@ export interface BodyView {
   back: BodyPoly[];
   top: { name: string; value: string }[];
   missing: string[];
+  missingTips: MuscleTip[];
+}
+
+export interface MuscleTip {
+  muscle: string;
+  area: string; // where it sits, in plain words
+  moves: string[]; // the moves in the app that hit it hardest
+}
+
+// plain-words location of each muscle on the body map
+const MUSCLE_AREA: Record<string, string> = {
+  Chest: 'Chest', Obliques: 'Abs · sides of the waist', 'Rectus Abdominis': 'Abs · six-pack',
+  Biceps: 'Arm · front of the upper arm', Triceps: 'Arm · back of the upper arm', Forearms: 'Arm · forearm',
+  Traps: 'Back · upper back and neck', Lats: 'Back · sides, under the armpits', Rhomboids: 'Back · between the shoulder blades',
+  Erectors: 'Back · lower back, along the spine', 'Front Delts': 'Shoulder · front', 'Side Delts': 'Shoulder · side',
+  'Rear Delts': 'Shoulder · back', Quads: 'Leg · front of the thigh', Hamstrings: 'Leg · back of the thigh',
+  Adductors: 'Leg · inner thigh', 'Hip Flexors': 'Hip · front', Glutes: 'Glutes · seat', 'Glute Medius': 'Glutes · side of the hip',
+  Calves: 'Leg · calf',
+};
+
+// the three moves (from every one the app knows) that put the most of their work
+// on this muscle
+function bestMovesFor(muscle: string): string[] {
+  const scored: [string, number][] = [];
+  Object.keys(POOL).forEach((g) =>
+    Object.keys(POOL[g]).forEach((n) => {
+      const pc = breakdownFor(n, g)
+        .filter(([m]) => (MUS_REGION[m] || m) === muscle)
+        .reduce((a, [, p]) => a + p, 0);
+      if (pc > 0) scored.push([n, pc + POOL[g][n] / 1000]); // emphasis breaks ties
+    })
+  );
+  return Array.from(new Set(scored.sort((a, b) => b[1] - a[1]).map(([n]) => n))).slice(0, 3);
 }
 
 // set-equivalents per muscle over the last 7 days: finished sessions carry their
@@ -654,14 +687,16 @@ export function bodyView(state: AppState): BodyView {
     return out;
   };
   const trained = BODY_MUSCLES.filter((m) => (tot[m] || 0) >= 1);
+  const missing = BODY_MUSCLES.filter((m) => !((tot[m] || 0) >= 1));
   return {
+    missingTips: missing.map((m) => ({ muscle: m, area: MUSCLE_AREA[m] || '', moves: bestMovesFor(m) })),
     front: map(BODY_FRONT),
     back: map(BODY_BACK),
     top: trained
       .sort((a, b) => tot[b] - tot[a])
       .slice(0, 4)
       .map((m) => ({ name: m.toUpperCase(), value: Math.round(tot[m] * 10) / 10 + ' SETS' })),
-    missing: BODY_MUSCLES.filter((m) => !((tot[m] || 0) >= 1)),
+    missing,
   };
 }
 

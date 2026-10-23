@@ -195,7 +195,11 @@ function muscleBreakdown(name: string): Breakdown | null {
   if (n === 'deadlift') return [['Erectors', 30], ['Glutes', 28], ['Hamstrings', 22], ['Lats', 12], ['Traps', 8]];
   if (/deadlift|good morning|pull-through|rdl/.test(n)) return [['Hamstrings', 48], ['Glutes', 34], ['Erectors', 18]];
   if (/tricep dip|bench dip|close-grip/.test(n)) return [['Triceps', 78], ['Front Delts', 12], ['Chest', 10]];
-  if (/row|pulldown|pull-up|pull up|chin-up|inverted row/.test(n)) return [['Lats', 52], ['Biceps', 22], ['Rear Delts', 16], ['Traps', 10]];
+  // calf work done on a squat / leg-press machine is still calf work
+  if (/calf|calves/.test(n)) return [['Calves', 95], ['Soleus', 5]];
+  // rows pull the shoulder blades together; pulldowns are mostly lats
+  if (/row|pulley/.test(n)) return [['Lats', 40], ['Rhomboids', 20], ['Biceps', 18], ['Rear Delts', 14], ['Traps', 8]];
+  if (/pulldown|lat pull|pull-up|pull up|chin-up/.test(n)) return [['Lats', 52], ['Biceps', 22], ['Rear Delts', 16], ['Traps', 10]];
   if (/lateral raise|side raise/.test(n)) return [['Side Delts', 82], ['Front Delts', 10], ['Traps', 8]];
   if (/front raise/.test(n)) return [['Front Delts', 80], ['Side Delts', 14], ['Chest', 6]];
   if (/arnold|overhead press|shoulder press|push press|pike push|landmine press/.test(n)) return [['Front Delts', 48], ['Side Delts', 30], ['Triceps', 22]];
@@ -205,7 +209,6 @@ function muscleBreakdown(name: string): Breakdown | null {
   if (/leg curl/.test(n)) return [['Hamstrings', 85], ['Calves', 15]];
   if (/squat|leg press|lunge|step-up|hack|bulgarian|pistol/.test(n)) return [['Quads', 55], ['Glutes', 30], ['Hamstrings', 15]];
   if (/hip thrust/.test(n)) return [['Glutes', 68], ['Hamstrings', 32]];
-  if (/calf|calves/.test(n)) return [['Calves', 95], ['Soleus', 5]];
   if (/abductor/.test(n)) return [['Glute Medius', 90], ['Outer Thigh', 10]];
   if (/adductor/.test(n)) return [['Adductors', 95], ['Inner Thigh', 5]];
   if (/curl/.test(n)) return [['Biceps', 82], ['Forearms', 18]];
